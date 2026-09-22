@@ -25,7 +25,7 @@ The baseline includes pgcrypto payload hashing, compound workspace/team foreign 
 - UI/server-route contract typecheck using local compile shims
 - syntax validation for all Neon Function source files
 
-A full `next build` is intentionally delegated to CI because the execution environment used for recovery has no npm package cache/network. `.github/workflows/validate.yml` installs dependencies, re-runs `validate:source`, and runs `npm run build`.
+A full `next build` is delegated to CI because the recovery execution environment does not provide a normal npm install path. GitHub Actions run `35674476204` on commit `258dd0b7cc3a81ff941c5b884cb7e122c68deecf` completed successfully: `npm install`, `npm run validate:source`, and `npm run build` all passed. The earlier install failure was traced to the nonexistent package `@neon/config@^0.2.0`; the source now uses Neon's published `@neondatabase/config` package and documented `@neondatabase/config/v1` import.
 
 ## Core cases
 
@@ -86,7 +86,7 @@ The PL/pgSQL migration 004 was not bypassed onto main with direct SQL. Migration
 
 ## External deployment status
 
-Public GitHub repository `AnasAli09822/agent-control-tower` now exists and is writable through the connected GitHub API. The recovered source is being published there through Git tree/blob operations with local-vs-remote blob SHA checks before the main ref is moved. CI is not claimed green until the workflow run is inspected. Vercel connectivity is confirmed: team `nathmagency-2935s-projects` is visible and its existing LoopOS projects are listed. No dedicated `agent-control-tower` Vercel project exists yet; existing LoopOS projects remain untouched.
+Public GitHub repository `AnasAli09822/agent-control-tower` is live and writable through the connected GitHub API. Its source tree matches the recovered project content, with an intentional CI workflow improvement (`workflow_dispatch` enabled and npm cache disabled because no lockfile exists). GitHub Actions run `35674476204` is green through install, source validation, and production `next build`. Vercel connectivity is confirmed: team `nathmagency-2935s-projects` is visible and its existing LoopOS projects are listed. No dedicated `agent-control-tower` Vercel project exists yet; the dashboard import is blocked only on GitHub OAuth in the browser session, and existing LoopOS projects remain untouched.
 
 ## Main post-apply verification — 2026-09-22
 
