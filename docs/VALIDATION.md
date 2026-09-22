@@ -86,7 +86,9 @@ The PL/pgSQL migration 004 was not bypassed onto main with direct SQL. Migration
 
 ## External deployment status
 
-Public GitHub repository `AnasAli09822/agent-control-tower` is live and writable through the connected GitHub API. Its source tree matches the recovered project content, with an intentional CI workflow improvement (`workflow_dispatch` enabled and npm cache disabled because no lockfile exists). GitHub Actions run `35674476204` is green through install, source validation, and production `next build`. Vercel connectivity is confirmed: team `nathmagency-2935s-projects` is visible and its existing LoopOS projects are listed. No dedicated `agent-control-tower` Vercel project exists yet; the dashboard import is blocked only on GitHub OAuth in the browser session, and existing LoopOS projects remain untouched.
+Public GitHub repository `AnasAli09822/agent-control-tower` is live. The normal validation workflow has passed dependency installation, `npm run validate:source`, and production `next build`. Vercel is connected to this repository and GitHub reports successful Vercel deployment status under scope `alhajans664-2649s-projects`. The project-specific Vercel deployment is protected by Vercel Authentication, so anonymous runtime acceptance is not yet available. `https://agent-control-tower.vercel.app` currently resolves to a different/default “Create Next App” deployment and is not treated as acceptance evidence.
+
+The hardened recovered Neon Function source is validated locally/source-side, while main still preserves the older `actcontrol`/`actevents` Function deployments. Phase 9 therefore remains open until the hardened Function source is deployed to validation and main, Vercel is pointed at that backend, and a fresh external acceptance run passes.
 
 ## Main post-apply verification — 2026-09-22
 
