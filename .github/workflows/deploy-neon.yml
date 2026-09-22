@@ -10,6 +10,10 @@ on:
         options:
           - validation
           - production
+  push:
+    branches:
+      - neon-validation
+      - neon-production
 
 permissions:
   contents: read
@@ -17,7 +21,7 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.target }}
+    environment: ${{ github.ref_name == 'neon-production' && 'production' || (github.ref_name == 'neon-validation' && 'validation' || inputs.target) }}
     env:
       NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
       CONTROL_API_KEY: ${{ secrets.CONTROL_API_KEY }}
@@ -30,6 +34,28 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Resolve deployment target
+        shell: bash
+        run: |
+          case "${GITHUB_REF_NAME}" in
+            neon-production)
+              echo "TARGET=production" >> "$GITHUB_ENV"
+              echo "TARGET_BRANCH_ID=$PRODUCTION_BRANCH_ID" >> "$GITHUB_ENV"
+              ;;
+            neon-validation)
+              echo "TARGET=validation" >> "$GITHUB_ENV"
+              echo "TARGET_BRANCH_ID=$VALIDATION_BRANCH_ID" >> "$GITHUB_ENV"
+              ;;
+            *)
+              if [ "${{ inputs.target }}" = "production" ]; then
+                echo "TARGET=production" >> "$GITHUB_ENV"
+                echo "TARGET_BRANCH_ID=$PRODUCTION_BRANCH_ID" >> "$GITHUB_ENV"
+              else
+                echo "TARGET=validation" >> "$GITHUB_ENV"
+                echo "TARGET_BRANCH_ID=$VALIDATION_BRANCH_ID" >> "$GITHUB_ENV"
+              fi
+              ;;
+          esac
       - name: Require deployment secrets
         shell: bash
         run: |
@@ -38,14 +64,6 @@ jobs:
           test -n "$EVENT_STREAM_SECRET" || { echo "Missing EVENT_STREAM_SECRET"; exit 1; }
       - name: Install Neon CLI
         run: npm install --global neon
-      - name: Select target branch
-        shell: bash
-        run: |
-          if [ "${{ inputs.target }}" = "production" ]; then
-            echo "TARGET_BRANCH_ID=$PRODUCTION_BRANCH_ID" >> "$GITHUB_ENV"
-          else
-            echo "TARGET_BRANCH_ID=$VALIDATION_BRANCH_ID" >> "$GITHUB_ENV"
-          fi
       - name: Link Neon project and branch
         run: neon link --project-id "$NEON_PROJECT_ID" --branch-id "$TARGET_BRANCH_ID" --yes
       - name: Deploy hardened control API
