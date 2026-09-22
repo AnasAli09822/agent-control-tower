@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "es2022"],
+    "strict": true,
+    "noImplicitAny": false,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "preserve",
+    "baseUrl": ".",
+    "paths": { "@/*": ["./src/*"] },
+    "types": []
+  },
+  "include": ["tests/typecheck/shims.d.ts", "src/app/**/*.ts", "src/app/**/*.tsx", "src/components/**/*.tsx", "src/lib/**/*.ts"]
+}
