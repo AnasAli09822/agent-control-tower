@@ -1,0 +1,56 @@
+name: deploy-neon
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Deployment target"
+        required: true
+        type: choice
+        options:
+          - validation
+          - production
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.target }}
+    env:
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      CONTROL_API_KEY: ${{ secrets.CONTROL_API_KEY }}
+      EVENT_STREAM_SECRET: ${{ secrets.EVENT_STREAM_SECRET }}
+      NEON_PROJECT_ID: weathered-poetry-97205616
+      VALIDATION_BRANCH_ID: br-little-art-b5e06cd8
+      PRODUCTION_BRANCH_ID: br-gentle-butterfly-b57bd2r5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Require deployment secrets
+        shell: bash
+        run: |
+          test -n "$NEON_API_KEY" || { echo "Missing NEON_API_KEY"; exit 1; }
+          test -n "$CONTROL_API_KEY" || { echo "Missing CONTROL_API_KEY"; exit 1; }
+          test -n "$EVENT_STREAM_SECRET" || { echo "Missing EVENT_STREAM_SECRET"; exit 1; }
+      - name: Install Neon CLI
+        run: npm install --global neon
+      - name: Select target branch
+        shell: bash
+        run: |
+          if [ "${{ inputs.target }}" = "production" ]; then
+            echo "TARGET_BRANCH_ID=$PRODUCTION_BRANCH_ID" >> "$GITHUB_ENV"
+          else
+            echo "TARGET_BRANCH_ID=$VALIDATION_BRANCH_ID" >> "$GITHUB_ENV"
+          fi
+      - name: Link Neon project and branch
+        run: neon link --project-id "$NEON_PROJECT_ID" --branch-id "$TARGET_BRANCH_ID" --yes
+      - name: Deploy hardened control API
+        run: neon functions deploy actcontrol --src functions/actcontrol/index.mjs --env "CONTROL_API_KEY=$CONTROL_API_KEY" --env "EVENT_STREAM_SECRET=$EVENT_STREAM_SECRET"
+      - name: Deploy hardened event API
+        run: neon functions deploy actevents --src functions/actevents/index.mjs --env "CONTROL_API_KEY=$CONTROL_API_KEY" --env "EVENT_STREAM_SECRET=$EVENT_STREAM_SECRET"
+      - name: Show deployed functions
+        run: neon functions list --output json
