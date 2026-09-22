@@ -1,0 +1,38 @@
+name: package-neon
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/package-neon.yml'
+      - 'functions/**'
+      - 'package.json'
+
+permissions:
+  contents: read
+
+jobs:
+  bundle:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - name: Bundle Neon functions
+        run: |
+          npx --yes @vercel/ncc@0.38.4 build functions/actcontrol/index.mjs -o dist/actcontrol -m
+          npx --yes @vercel/ncc@0.38.4 build functions/actevents/index.mjs -o dist/actevents -m
+          (cd dist/actcontrol && zip -qr ../../actcontrol.zip .)
+          (cd dist/actevents && zip -qr ../../actevents.zip .)
+          sha256sum actcontrol.zip actevents.zip > neon-function-bundles.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: neon-function-bundles
+          path: |
+            actcontrol.zip
+            actevents.zip
+            neon-function-bundles.sha256
+          if-no-files-found: error
+          retention-days: 7
