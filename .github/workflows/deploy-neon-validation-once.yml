@@ -1,0 +1,75 @@
+name: deploy-neon-validation-once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/deploy-neon-validation-once.yml
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-validation:
+    runs-on: ubuntu-24.04
+    env:
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      CONTROL_API_KEY: ${{ secrets.CONTROL_API_KEY }}
+      NEON_PROJECT_ID: weathered-poetry-97205616
+      NEON_BRANCH_ID: br-little-art-b5e06cd8
+      CONTROL_URL: https://br-little-art-b5e06cd8-actcontrol.compute.c-7.us-east-2.aws.neon.tech
+      EVENTS_URL: https://br-little-art-b5e06cd8-actevents.compute.c-7.us-east-2.aws.neon.tech
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify deploy secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$NEON_API_KEY" || { echo 'missing NEON_API_KEY'; exit 1; }
+          test -n "$CONTROL_API_KEY" || { echo 'missing CONTROL_API_KEY'; exit 1; }
+      - name: Install dependencies and validate source
+        run: |
+          npm install
+          npm run validate:source
+      - name: Install Neon CLI
+        run: npm install -g neon@latest
+      - name: Link validation branch
+        run: neon set-context --project-id "$NEON_PROJECT_ID" --branch-id "$NEON_BRANCH_ID"
+      - name: Plan validation deployment
+        run: neon config plan
+      - name: Deploy hardened functions to validation only
+        run: neon deploy
+      - name: Smoke test hardened control API
+        shell: bash
+        run: |
+          set -euo pipefail
+          sleep 8
+          code=$(curl -sS -o /tmp/unauth.json -w '%{http_code}' "$CONTROL_URL/fleet?workspace_id=ws_demo&team_id=team_operations")
+          test "$code" = "401" || { echo "expected unauthorized 401, got $code"; cat /tmp/unauth.json; exit 1; }
+          code=$(curl -sS -o /tmp/fleet.json -w '%{http_code}' -H "x-api-key: $CONTROL_API_KEY" "$CONTROL_URL/fleet?workspace_id=ws_demo&team_id=team_operations")
+          test "$code" = "200" || { echo "authorized fleet failed with $code"; cat /tmp/fleet.json; exit 1; }
+          node -e 'const x=JSON.parse(require("fs").readFileSync("/tmp/fleet.json","utf8")); if(!Array.isArray(x.agents)) process.exit(1); console.log(`fleet agents: ${x.agents.length}`)'
+      - name: Smoke test signed SSE scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /tmp/events-unauth.json -w '%{http_code}' "$EVENTS_URL/?workspace_id=ws_demo&team_id=team_operations&after_sequence=0")
+          test "$code" = "401" || { echo "expected SSE unauthorized 401, got $code"; head -c 500 /tmp/events-unauth.json; exit 1; }
+          token=$(node - <<'NODE'
+          const { createHmac } = require('node:crypto');
+          const claims={v:1,workspace_id:'ws_demo',team_id:'team_operations',iat:Math.floor(Date.now()/1000),exp:Math.floor(Date.now()/1000)+120};
+          const payload=Buffer.from(JSON.stringify(claims)).toString('base64url');
+          const sig=createHmac('sha256',process.env.CONTROL_API_KEY).update(payload).digest('base64url');
+          process.stdout.write(`${payload}.${sig}`);
+          NODE
+          )
+          set +e
+          curl --max-time 4 -sS -D /tmp/events.headers -o /tmp/events.body "$EVENTS_URL/?workspace_id=ws_demo&team_id=team_operations&after_sequence=0&token=$token"
+          rc=$?
+          set -e
+          grep -qi '^content-type: text/event-stream' /tmp/events.headers || { echo 'signed SSE did not return text/event-stream'; cat /tmp/events.headers; head -c 500 /tmp/events.body; exit 1; }
+          if [[ "$rc" != "0" && "$rc" != "28" ]]; then echo "unexpected curl rc=$rc"; exit 1; fi
+          echo 'signed SSE scope accepted'
