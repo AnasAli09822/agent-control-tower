@@ -1,0 +1,159 @@
+name: deploy-neon
+
+on:
+  push:
+    branches:
+      - neon-validation
+      - neon-production
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Deployment target
+        required: true
+        type: choice
+        options:
+          - validation
+          - production
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-neon-${{ github.ref_name }}-${{ inputs.target || 'branch' }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      CONTROL_API_KEY: ${{ secrets.CONTROL_API_KEY }}
+      EVENT_STREAM_SECRET: ${{ secrets.EVENT_STREAM_SECRET }}
+      NEON_PROJECT_ID: weathered-poetry-97205616
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Resolve deployment target
+        shell: bash
+        run: |
+          set -euo pipefail
+          target="${{ inputs.target }}"
+          if [[ -z "$target" ]]; then
+            case "${GITHUB_REF_NAME}" in
+              neon-validation) target="validation" ;;
+              neon-production) target="production" ;;
+              *) echo "::error::Unsupported deployment ref ${GITHUB_REF_NAME}"; exit 1 ;;
+            esac
+          fi
+
+          case "$target" in
+            validation)
+              branch_id="br-little-art-b5e06cd8"
+              ;;
+            production)
+              branch_id="br-gentle-butterfly-b57bd2r5"
+              ;;
+            *)
+              echo "::error::Unsupported target $target"
+              exit 1
+              ;;
+          esac
+
+          echo "DEPLOY_TARGET=$target" >> "$GITHUB_ENV"
+          echo "NEON_BRANCH_ID=$branch_id" >> "$GITHUB_ENV"
+          echo "CONTROL_URL=https://${branch_id}-actcontrol.compute.c-7.us-east-2.aws.neon.tech" >> "$GITHUB_ENV"
+          echo "EVENTS_URL=https://${branch_id}-actevents.compute.c-7.us-east-2.aws.neon.tech" >> "$GITHUB_ENV"
+
+      - name: Verify deployment secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in NEON_API_KEY CONTROL_API_KEY EVENT_STREAM_SECRET; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::$name is not configured as a repository Actions secret"
+              exit 1
+            fi
+          done
+          if [[ "$CONTROL_API_KEY" == "$EVENT_STREAM_SECRET" ]]; then
+            echo "::error::CONTROL_API_KEY and EVENT_STREAM_SECRET must be different"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Validate source
+        run: npm run validate:source
+
+      - name: Install Neon CLI
+        run: npm install -g neon@latest
+
+      - name: Link Neon project and branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          neon link --project-id "$NEON_PROJECT_ID" --branch-id "$NEON_BRANCH_ID"
+
+      - name: Deploy control API
+        shell: bash
+        run: |
+          set -euo pipefail
+          neon functions deploy actcontrol \
+            --src functions/actcontrol/index.mjs \
+            --env CONTROL_API_KEY="$CONTROL_API_KEY" \
+            --env EVENT_STREAM_SECRET="$EVENT_STREAM_SECRET"
+
+      - name: Deploy event API
+        shell: bash
+        run: |
+          set -euo pipefail
+          neon functions deploy actevents \
+            --src functions/actevents/index.mjs \
+            --env CONTROL_API_KEY="$CONTROL_API_KEY" \
+            --env EVENT_STREAM_SECRET="$EVENT_STREAM_SECRET"
+
+      - name: Smoke test hardened endpoints
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          curl --fail --silent --show-error "$CONTROL_URL/health" >/tmp/control-health.json
+          curl --fail --silent --show-error "$EVENTS_URL/health" >/tmp/events-health.json
+
+          control_code=$(curl --silent --output /tmp/control-unauth.json --write-out '%{http_code}' \
+            "$CONTROL_URL/fleet?workspace_id=ws_demo")
+          events_code=$(curl --silent --output /tmp/events-unauth.json --write-out '%{http_code}' \
+            "$EVENTS_URL/events?workspace_id=ws_demo")
+
+          test "$control_code" = "401"
+          test "$events_code" = "401"
+
+          curl --fail --silent --show-error \
+            -H "x-api-key: $CONTROL_API_KEY" \
+            "$CONTROL_URL/fleet?workspace_id=ws_demo" >/tmp/fleet.json
+
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const control = JSON.parse(fs.readFileSync('/tmp/control-health.json','utf8'));
+          const events = JSON.parse(fs.readFileSync('/tmp/events-health.json','utf8'));
+          const fleet = JSON.parse(fs.readFileSync('/tmp/fleet.json','utf8'));
+          if (!control.ok || control.service !== 'actcontrol') throw new Error('control health failed');
+          if (!events.ok || events.service !== 'actevents') throw new Error('events health failed');
+          if (!Array.isArray(fleet.agents) || fleet.agents.length < 3) throw new Error('fleet smoke test failed');
+          NODE
+
+      - name: Deployment summary
+        shell: bash
+        run: |
+          {
+            echo "### Neon deployment"
+            echo "- Target: $DEPLOY_TARGET"
+            echo "- Branch: $NEON_BRANCH_ID"
+            echo "- Control: $CONTROL_URL"
+            echo "- Events: $EVENTS_URL"
+            echo "- Hardened health/auth/fleet smoke tests: passed"
+          } >> "$GITHUB_STEP_SUMMARY"
