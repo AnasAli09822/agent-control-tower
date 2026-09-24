@@ -1,0 +1,3 @@
+Controlled validation deployment trigger for hardened Neon Functions.
+Source base: d7b412a290abec7159b6798ddde621d83e0759a1
+Target branch: br-little-art-b5e06cd8
