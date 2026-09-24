@@ -4,7 +4,9 @@ on:
   push:
     branches:
       - neon-validation
+      - 'neon-validation-*'
       - neon-production
+      - 'neon-production-*'
   workflow_dispatch:
     inputs:
       target:
@@ -44,8 +46,8 @@ jobs:
           target="${{ inputs.target }}"
           if [[ -z "$target" ]]; then
             case "${GITHUB_REF_NAME}" in
-              neon-validation) target="validation" ;;
-              neon-production) target="production" ;;
+              neon-validation|neon-validation-*) target="validation" ;;
+              neon-production|neon-production-*) target="production" ;;
               *) echo "::error::Unsupported deployment ref ${GITHUB_REF_NAME}"; exit 1 ;;
             esac
           fi
