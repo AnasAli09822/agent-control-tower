@@ -1,0 +1,144 @@
+name: foresee-deploy
+
+on:
+  push:
+    branches: [foresee-deploy]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      NEON_PROJECT_ID: weathered-poetry-97205616
+      NEON_BRANCH_ID: br-falling-hill-b5dguwdc
+      FORESEE_URL: https://br-falling-hill-b5dguwdc-foresee.compute.c-7.us-east-2.aws.neon.tech
+    steps:
+      - name: Checkout deployment carrier
+        uses: actions/checkout@v4
+
+      - name: Checkout challenge source
+        uses: actions/checkout@v4
+        with:
+          repository: AnasAli09822/my-code
+          ref: main
+          path: foresee-source
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify Neon credential exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${NEON_API_KEY:-}" || { echo '::error::NEON_API_KEY is unavailable'; exit 1; }
+
+      - name: Install challenge dependencies
+        working-directory: foresee-source
+        run: npm install --no-audit --no-fund
+
+      - name: Install Neon CLI
+        run: npm install -g neon@latest
+
+      - name: Link isolated Neon branch
+        run: neon link --project-id "$NEON_PROJECT_ID" --branch-id "$NEON_BRANCH_ID"
+
+      - name: Resolve isolated database URL
+        shell: bash
+        run: |
+          set -euo pipefail
+          DATABASE_URL=$(neon connection-string "$NEON_BRANCH_ID" --database-name controltower --role-name controltower_owner --pooled)
+          echo "::add-mask::$DATABASE_URL"
+          echo "DATABASE_URL=$DATABASE_URL" >> "$GITHUB_ENV"
+
+      - name: Run real PostgreSQL integration suite
+        working-directory: foresee-source
+        run: npm test -- tests/integration.test.ts
+
+      - name: Deploy public Foresee function
+        shell: bash
+        run: |
+          set -euo pipefail
+          neon functions deploy foresee \
+            --src foresee-source/neon-function/index.ts \
+            --env DATABASE_URL="$DATABASE_URL" \
+            --branch "$NEON_BRANCH_ID" \
+            --wait
+
+      - name: End-to-end HTTP smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const crypto = require('node:crypto');
+          const base = process.env.FORESEE_URL;
+          const sid = crypto.randomUUID();
+          const headers = {'content-type':'application/json','x-foresee-session':sid};
+          async function req(path, init={}) {
+            let last;
+            for (let i=0;i<15;i++) {
+              try {
+                const r = await fetch(base+path,{...init,headers:{...headers,...(init.headers||{})}});
+                const text = await r.text();
+                let data; try { data=JSON.parse(text); } catch { data={raw:text}; }
+                if (r.ok) return data;
+                last = new Error(`${path}: HTTP ${r.status} ${text.slice(0,300)}`);
+              } catch (e) { last=e; }
+              await new Promise(r=>setTimeout(r,2000));
+            }
+            throw last;
+          }
+          function assert(cond,msg){if(!cond)throw new Error(msg)}
+          (async()=>{
+            const health=await req('/health');
+            assert(health.ok && health.service==='foresee','health failed');
+            await req('/api/reset',{method:'POST',body:'{}'});
+
+            const action=await req('/api/action',{method:'POST',body:JSON.stringify({intent:'Delete customers who have been inactive for more than 12 months.'})});
+            const high=await req('/api/simulate',{method:'POST',body:JSON.stringify({plan:action.plan})});
+            assert(high.impact.customersDeleted===18,'expected 18 targets');
+            assert(high.impact.activeSubscriptionsAffected===1,'expected one protected subscription');
+            assert(high.impact.mrrAtRisk===2400,'expected $2400 MRR risk');
+            assert(high.risk==='HIGH','expected HIGH risk');
+
+            const safePlan=structuredClone(high.plan);
+            safePlan.filters.exclude_active_subscriptions=true;
+            const low=await req('/api/tweak',{method:'POST',body:JSON.stringify({simulationId:high.id,plan:safePlan})});
+            assert(low.impact.customersDeleted===17,'expected 17 safe targets');
+            assert(low.impact.activeSubscriptionsAffected===0,'protected subscription should be excluded');
+            assert(low.impact.mrrAtRisk===0,'protected MRR should be zero');
+            assert(low.risk==='LOW','expected LOW risk');
+
+            const executed=await req('/api/execute',{method:'POST',body:JSON.stringify({simulationId:low.id})});
+            assert(executed.status==='committed','safe execution should commit');
+            const after=await req('/api/state');
+            assert(after.state.customers===1007,'expected committed customer count 1007');
+            assert(after.state.mrr===87400,'MRR should remain unchanged');
+            await req('/api/rollback',{method:'POST',body:JSON.stringify({executionId:executed.executionId})});
+            const restored=await req('/api/state');
+            assert(restored.state.customers===1024,'manual rollback did not restore 1024 customers');
+
+            await req('/api/reset',{method:'POST',body:'{}'});
+            const failureAction=await req('/api/action',{method:'POST',body:JSON.stringify({scenario:'failure'})});
+            const failureSim=await req('/api/simulate',{method:'POST',body:JSON.stringify({plan:failureAction.plan})});
+            const blocked=await req('/api/execute',{method:'POST',body:JSON.stringify({simulationId:failureSim.id})});
+            assert(blocked.status==='auto_rolled_back','failure scenario must auto rollback');
+            assert(blocked.unexpected.includes('account_summary.enterprise_customers'),'hidden side effect was not detected');
+            const final=await req('/api/state');
+            assert(final.state.customers===1024,'failure path changed persistent customer state');
+            console.log('FORESEE_SMOKE_OK golden=passed failure=passed rollback=passed');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+
+      - name: Deployment summary
+        run: |
+          echo '### Foresee live deployment' >> "$GITHUB_STEP_SUMMARY"
+          echo "- URL: $FORESEE_URL" >> "$GITHUB_STEP_SUMMARY"
+          echo '- Real PostgreSQL integration suite: passed' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Golden path HTTP smoke: passed' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Manual rollback HTTP smoke: passed' >> "$GITHUB_STEP_SUMMARY"
+          echo '- Hidden-side-effect auto rollback: passed' >> "$GITHUB_STEP_SUMMARY"
