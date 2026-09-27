@@ -193,13 +193,7 @@ jobs:
           test "$control_code" = "401"
           test "$events_code" = "401"
 
-          node - <<'NODE'
-          const fs = require('node:fs');
-          const control = JSON.parse(fs.readFileSync('/tmp/control-health.json','utf8'));
-          const events = JSON.parse(fs.readFileSync('/tmp/events-health.json','utf8'));
-          if (!control.ok || control.service !== 'actcontrol') throw new Error('control health failed');
-          if (!events.ok || events.service !== 'actevents') throw new Error('events health failed');
-          NODE
+          node -e "const fs=require('node:fs'); const control=JSON.parse(fs.readFileSync('/tmp/control-health.json','utf8')); const events=JSON.parse(fs.readFileSync('/tmp/events-health.json','utf8')); if(!control.ok||control.service!=='actcontrol') throw new Error('control health failed'); if(!events.ok||events.service!=='actevents') throw new Error('events health failed');"
 
           if [[ "$DEPLOY_TARGET" == "validation" ]]; then
             curl --fail --silent --show-error \
@@ -221,13 +215,7 @@ jobs:
             grep -qi '^content-type: text/event-stream' /tmp/stream.headers
             grep -q 'retry: 1500' /tmp/stream.body
 
-            node - <<'NODE'
-            const fs = require('node:fs');
-            const fleet = JSON.parse(fs.readFileSync('/tmp/fleet.json','utf8'));
-            const events = JSON.parse(fs.readFileSync('/tmp/events.json','utf8'));
-            if (!Array.isArray(fleet.agents) || fleet.agents.length < 3) throw new Error('fleet database smoke test failed');
-            if (!Array.isArray(events.events)) throw new Error('signed events smoke test failed');
-            NODE
+            node -e "const fs=require('node:fs'); const fleet=JSON.parse(fs.readFileSync('/tmp/fleet.json','utf8')); const events=JSON.parse(fs.readFileSync('/tmp/events.json','utf8')); if(!Array.isArray(fleet.agents)||fleet.agents.length<3) throw new Error('fleet database smoke test failed'); if(!Array.isArray(events.events)) throw new Error('signed events smoke test failed');"
           fi
 
       - name: Deployment summary
