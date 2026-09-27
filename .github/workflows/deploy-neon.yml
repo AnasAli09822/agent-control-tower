@@ -28,10 +28,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      # The official Neon GitHub integration creates this repository secret.
       NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
-      # The integration also creates NEON_PROJECT_ID as a repository variable.
-      # Keep the known project ID as a safe fallback for this repository only.
       NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID || 'weathered-poetry-97205616' }}
     steps:
       - uses: actions/checkout@v4
@@ -56,9 +53,13 @@ jobs:
           case "$target" in
             validation)
               branch_id="br-little-art-b5e06cd8"
+              control_slug="actctl927"
+              events_slug="actevt927"
               ;;
             production)
               branch_id="br-gentle-butterfly-b57bd2r5"
+              control_slug="actcontrol"
+              events_slug="actevents"
               ;;
             *)
               echo "::error::Unsupported target $target"
@@ -68,15 +69,17 @@ jobs:
 
           echo "DEPLOY_TARGET=$target" >> "$GITHUB_ENV"
           echo "NEON_BRANCH_ID=$branch_id" >> "$GITHUB_ENV"
-          echo "CONTROL_URL=https://${branch_id}-actcontrol.compute.c-7.us-east-2.aws.neon.tech" >> "$GITHUB_ENV"
-          echo "EVENTS_URL=https://${branch_id}-actevents.compute.c-7.us-east-2.aws.neon.tech" >> "$GITHUB_ENV"
+          echo "CONTROL_SLUG=$control_slug" >> "$GITHUB_ENV"
+          echo "EVENTS_SLUG=$events_slug" >> "$GITHUB_ENV"
+          echo "CONTROL_URL=https://${branch_id}-${control_slug}.compute.c-7.us-east-2.aws.neon.tech" >> "$GITHUB_ENV"
+          echo "EVENTS_URL=https://${branch_id}-${events_slug}.compute.c-7.us-east-2.aws.neon.tech" >> "$GITHUB_ENV"
 
       - name: Verify Neon integration credential
         shell: bash
         run: |
           set -euo pipefail
           if [[ -z "${NEON_API_KEY:-}" ]]; then
-            echo "::error::NEON_API_KEY is not available to this repository workflow. Reconnect the Neon GitHub integration to this repository."
+            echo "::error::NEON_API_KEY is not available to this repository workflow"
             exit 1
           fi
           if [[ -z "${NEON_PROJECT_ID:-}" ]]; then
@@ -99,43 +102,93 @@ jobs:
           set -euo pipefail
           neon link --project-id "$NEON_PROJECT_ID" --branch-id "$NEON_BRANCH_ID"
 
+      - name: Prepare isolated validation environment
+        if: env.DEPLOY_TARGET == 'validation'
+        shell: bash
+        run: |
+          set -euo pipefail
+          control_key=$(openssl rand -hex 32)
+          event_secret=$(openssl rand -hex 32)
+          database_url=$(neon connection-string "$NEON_BRANCH_ID" --database-name controltower --role-name controltower_owner --pooled)
+
+          echo "::add-mask::$control_key"
+          echo "::add-mask::$event_secret"
+          echo "::add-mask::$database_url"
+
+          echo "CONTROL_API_KEY=$control_key" >> "$GITHUB_ENV"
+          echo "EVENT_STREAM_SECRET=$event_secret" >> "$GITHUB_ENV"
+          echo "ACT_DATABASE_URL=$database_url" >> "$GITHUB_ENV"
+
       - name: Deploy control API
         shell: bash
         run: |
           set -euo pipefail
-          # Do not pass application secrets here. Neon Functions merges/preserves
-          # environment variables from previous deployments when --env is omitted.
-          neon functions deploy actcontrol \
-            --src functions/actcontrol/index.mjs
+          if [[ "$DEPLOY_TARGET" == "validation" ]]; then
+            neon functions deploy "$CONTROL_SLUG" \
+              --src functions/actcontrol/index.mjs \
+              --env CONTROL_API_KEY="$CONTROL_API_KEY" \
+              --env ACT_DATABASE_URL="$ACT_DATABASE_URL"
+          else
+            # Production retains the existing application secrets on actcontrol.
+            neon functions deploy "$CONTROL_SLUG" \
+              --src functions/actcontrol/index.mjs
+          fi
 
       - name: Deploy event API
         shell: bash
         run: |
           set -euo pipefail
-          neon functions deploy actevents \
-            --src functions/actevents/index.mjs
+          if [[ "$DEPLOY_TARGET" == "validation" ]]; then
+            neon functions deploy "$EVENTS_SLUG" \
+              --src functions/actevents/index.mjs \
+              --env CONTROL_API_KEY="$CONTROL_API_KEY" \
+              --env EVENT_STREAM_SECRET="$EVENT_STREAM_SECRET" \
+              --env ACT_DATABASE_URL="$ACT_DATABASE_URL"
+          else
+            # Production retains the existing application secrets on actevents.
+            neon functions deploy "$EVENTS_SLUG" \
+              --src functions/actevents/index.mjs
+          fi
 
-      - name: Verify retained function secret names
+      - name: Verify function secret names
         shell: bash
         run: |
           set -euo pipefail
-          neon functions get actcontrol --branch "$NEON_BRANCH_ID" --list-env-variables > /tmp/actcontrol-env.txt
-          neon functions get actevents --branch "$NEON_BRANCH_ID" --list-env-variables > /tmp/actevents-env.txt
-          grep -q 'CONTROL_API_KEY' /tmp/actcontrol-env.txt
-          grep -q 'EVENT_STREAM_SECRET' /tmp/actevents-env.txt
+          neon functions get "$CONTROL_SLUG" --branch "$NEON_BRANCH_ID" --list-env-variables > /tmp/control-env.txt
+          neon functions get "$EVENTS_SLUG" --branch "$NEON_BRANCH_ID" --list-env-variables > /tmp/events-env.txt
+          grep -q 'CONTROL_API_KEY' /tmp/control-env.txt
+          grep -q 'EVENT_STREAM_SECRET' /tmp/events-env.txt
+          if [[ "$DEPLOY_TARGET" == "validation" ]]; then
+            grep -q 'ACT_DATABASE_URL' /tmp/control-env.txt
+            grep -q 'ACT_DATABASE_URL' /tmp/events-env.txt
+          fi
 
       - name: Smoke test hardened endpoints
         shell: bash
         run: |
           set -euo pipefail
 
-          curl --fail --silent --show-error "$CONTROL_URL/health" >/tmp/control-health.json
-          curl --fail --silent --show-error "$EVENTS_URL/health" >/tmp/events-health.json
+          wait_json() {
+            local url="$1"
+            local output="$2"
+            local code=""
+            for _ in $(seq 1 20); do
+              code=$(curl --silent --show-error --output "$output" --write-out '%{http_code}' "$url" || true)
+              if [[ "$code" == "200" ]]; then return 0; fi
+              sleep 2
+            done
+            echo "::error::$url did not become ready; last status=$code"
+            cat "$output" || true
+            return 1
+          }
+
+          wait_json "$CONTROL_URL/" /tmp/control-health.json
+          wait_json "$EVENTS_URL/" /tmp/events-health.json
 
           control_code=$(curl --silent --output /tmp/control-unauth.json --write-out '%{http_code}' \
-            "$CONTROL_URL/fleet?workspace_id=ws_demo")
+            "$CONTROL_URL/fleet?workspace_id=ws_demo&team_id=team_operations")
           events_code=$(curl --silent --output /tmp/events-unauth.json --write-out '%{http_code}' \
-            "$EVENTS_URL/events?workspace_id=ws_demo")
+            "$EVENTS_URL/events?workspace_id=ws_demo&team_id=team_operations")
 
           test "$control_code" = "401"
           test "$events_code" = "401"
@@ -148,6 +201,35 @@ jobs:
           if (!events.ok || events.service !== 'actevents') throw new Error('events health failed');
           NODE
 
+          if [[ "$DEPLOY_TARGET" == "validation" ]]; then
+            curl --fail --silent --show-error \
+              -H "x-api-key: $CONTROL_API_KEY" \
+              "$CONTROL_URL/fleet?workspace_id=ws_demo&team_id=team_operations" >/tmp/fleet.json
+
+            STREAM_TOKEN=$(node --input-type=module -e "import { signStreamToken } from './functions/shared/stream-token.mjs'; console.log(signStreamToken({workspaceId:'ws_demo',teamId:'team_operations',expiresAt:Math.floor(Date.now()/1000)+120}, process.env.EVENT_STREAM_SECRET));")
+            echo "::add-mask::$STREAM_TOKEN"
+
+            curl --fail --silent --show-error \
+              "$EVENTS_URL/events?workspace_id=ws_demo&team_id=team_operations&token=$STREAM_TOKEN" >/tmp/events.json
+
+            set +e
+            curl --silent --show-error --max-time 3 -D /tmp/stream.headers -o /tmp/stream.body \
+              "$EVENTS_URL/stream?workspace_id=ws_demo&team_id=team_operations&token=$STREAM_TOKEN"
+            stream_rc=$?
+            set -e
+            if [[ "$stream_rc" -ne 0 && "$stream_rc" -ne 28 ]]; then exit "$stream_rc"; fi
+            grep -qi '^content-type: text/event-stream' /tmp/stream.headers
+            grep -q 'retry: 1500' /tmp/stream.body
+
+            node - <<'NODE'
+            const fs = require('node:fs');
+            const fleet = JSON.parse(fs.readFileSync('/tmp/fleet.json','utf8'));
+            const events = JSON.parse(fs.readFileSync('/tmp/events.json','utf8'));
+            if (!Array.isArray(fleet.agents) || fleet.agents.length < 3) throw new Error('fleet database smoke test failed');
+            if (!Array.isArray(events.events)) throw new Error('signed events smoke test failed');
+            NODE
+          fi
+
       - name: Deployment summary
         shell: bash
         run: |
@@ -155,8 +237,15 @@ jobs:
             echo "### Neon deployment"
             echo "- Target: $DEPLOY_TARGET"
             echo "- Branch: $NEON_BRANCH_ID"
+            echo "- Control slug: $CONTROL_SLUG"
+            echo "- Events slug: $EVENTS_SLUG"
             echo "- Control: $CONTROL_URL"
             echo "- Events: $EVENTS_URL"
-            echo "- Existing application secrets retained in Neon Functions"
-            echo "- Hardened health and anonymous-auth rejection smoke tests: passed"
+            if [[ "$DEPLOY_TARGET" == "validation" ]]; then
+              echo "- Validation uses isolated ephemeral application secrets"
+              echo "- Health, 401 auth gates, database fleet read, signed events and SSE: passed"
+            else
+              echo "- Production application secrets retained in Neon Functions"
+              echo "- Health and anonymous-auth rejection: passed"
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
