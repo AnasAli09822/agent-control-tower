@@ -8,9 +8,9 @@
     "start": "next start",
     "typecheck:core": "tsc -p tsconfig.core.json --noEmit",
     "test:core": "node --experimental-strip-types --test tests/core.test.ts",
-    "test:security": "node --test tests/stream-token.test.mjs",
+    "test:security": "node --test tests/stream-token.test.mjs tests/vercel-oidc.test.mjs",
     "typecheck:ui-contract": "tsc -p tsconfig.ui-check.json --noEmit",
-    "check:functions": "node --check functions/actcontrol/index.mjs && node --check functions/actevents/index.mjs && node --check functions/shared/db.mjs && node --check functions/shared/scenarios.mjs && node --check functions/shared/scenario-runtime.mjs && node --check functions/shared/scenario-normal.mjs && node --check functions/shared/scenario-rogue.mjs && node --check functions/shared/scenario-approval.mjs && node --check functions/shared/stream-token.mjs",
+    "check:functions": "node --check functions/actcontrol/index.mjs && node --check functions/actevents/index.mjs && node --check functions/shared/db.mjs && node --check functions/shared/scenarios.mjs && node --check functions/shared/scenario-runtime.mjs && node --check functions/shared/scenario-normal.mjs && node --check functions/shared/scenario-rogue.mjs && node --check functions/shared/scenario-approval.mjs && node --check functions/shared/stream-token.mjs && node --check functions/shared/vercel-oidc.mjs",
     "validate:source": "npm run test:core && npm run test:security && npm run typecheck:core && npm run typecheck:ui-contract && npm run check:functions"
   },
   "dependencies": {
@@ -18,7 +18,9 @@
     "next": "^16.0.0",
     "pg": "^8.13.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "@vercel/oidc": "3.8.8",
+    "jose": "6.2.12"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

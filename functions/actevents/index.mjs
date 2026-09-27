@@ -1,7 +1,10 @@
 import { pool, json, errorResponse } from "../shared/db.mjs";
-import { verifyStreamToken } from "../shared/stream-token.mjs";
+import { signStreamToken, verifyStreamToken } from "../shared/stream-token.mjs";
+import { requireVercelOidc } from "../shared/vercel-oidc.mjs";
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const DEMO_WORKSPACE_ID = process.env.DEMO_WORKSPACE_ID ?? "ws_demo";
+const DEMO_TEAMS = new Set(["team_operations", "team_revenue"]);
 
 function scope(url) {
   const workspaceId = url.searchParams.get("workspace_id");
@@ -46,7 +49,16 @@ export default {
       if (url.pathname === "/health" || url.pathname === "/") return json({ ok: true, service: "actevents" }, 200, { "access-control-allow-origin": "*" });
 
       const { workspaceId, teamId } = scope(url);
-      verifyStreamToken(url.searchParams.get("token"), workspaceId, teamId, process.env.EVENT_STREAM_SECRET ?? process.env.CONTROL_API_KEY);
+      if (url.pathname === "/token") {
+        await requireVercelOidc(request);
+        if (workspaceId !== DEMO_WORKSPACE_ID || (teamId && !DEMO_TEAMS.has(teamId))) throw new Error("forbidden:demo_scope");
+        const secret = process.env.EVENT_STREAM_SECRET;
+        if (!secret) throw new Error("EVENT_STREAM_SECRET is required");
+        const expiresAt = Math.floor(Date.now() / 1000) + 120;
+        const token = signStreamToken({ workspaceId, teamId, expiresAt }, secret);
+        return json({ token, expires_at: expiresAt }, 200);
+      }
+      verifyStreamToken(url.searchParams.get("token"), workspaceId, teamId, process.env.EVENT_STREAM_SECRET);
       const queryAfter = Number(url.searchParams.get("after_sequence") || 0);
       const headerAfter = Number(request.headers.get("last-event-id") || 0);
       const after = Math.max(Number.isFinite(queryAfter) ? queryAfter : 0, Number.isFinite(headerAfter) ? headerAfter : 0);

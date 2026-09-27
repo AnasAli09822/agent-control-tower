@@ -6,15 +6,10 @@ export default defineConfig({
       actcontrol: {
         name: "Agent Control Tower — control API",
         source: "functions/actcontrol/index.mjs",
-        env: { CONTROL_API_KEY: process.env.CONTROL_API_KEY! },
       },
       actevents: {
         name: "Agent Control Tower — SSE event stream",
         source: "functions/actevents/index.mjs",
-        env: {
-          CONTROL_API_KEY: process.env.CONTROL_API_KEY!,
-          EVENT_STREAM_SECRET: process.env.EVENT_STREAM_SECRET!,
-        },
       },
     },
   },

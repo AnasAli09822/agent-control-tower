@@ -1,7 +1,8 @@
 import {
   pool, withTx, appendEvent, appendAudit, nextBigintId,
-  json, errorResponse, readJson, requireApiKey, idempotencyKey, correlationId,
+  json, errorResponse, readJson, idempotencyKey, correlationId,
 } from "../shared/db.mjs";
+import { requireControlAuth } from "../shared/vercel-oidc.mjs";
 import {
   startAllScenario, startRogueScenario, resolveApprovalAction, recordStaleWorkerDenial,
 } from "../shared/scenarios.mjs";
@@ -152,7 +153,6 @@ async function assertTransition(client, from, to) {
 }
 
 async function intervene(request, url, agentId, commandName) {
-  requireApiKey(request);
   const body = await readJson(request);
   const workspaceId = body.workspaceId ?? body.workspace_id;
   const teamId = body.teamId ?? body.team_id;
@@ -174,7 +174,7 @@ async function intervene(request, url, agentId, commandName) {
     const context = await activeContext(client, workspaceId, teamId, agentId);
 
     const to = commandName === "resume" ? "running" : commandName === "pause" ? "paused" : "killed";
-    if (agent.current_status === to && commandName !== "kill") throw new Error(`conflict:already_${to}`);
+    if (agent.current_status === to && commandName !== "kill") throw new Error( conflict:already_${to}`);
     if (agent.current_status === "killed") throw new Error("conflict:agent_killed");
     await assertTransition(client, agent.current_status, to);
 
@@ -244,7 +244,6 @@ async function intervene(request, url, agentId, commandName) {
 }
 
 async function decideApproval(request, approvalId, decision) {
-  requireApiKey(request);
   const body = await readJson(request);
   const workspaceId = body.workspaceId ?? body.workspace_id;
   const teamId = body.teamId ?? body.team_id;
@@ -255,7 +254,7 @@ async function decideApproval(request, approvalId, decision) {
     const result = await client.query(`select * from approvals where workspace_id=$1 and team_id=$2 and id=$3 for update`, [workspaceId, teamId, approvalId]);
     if (!result.rowCount) throw new Error("not_found:approval");
     const approval = result.rows[0];
-    if (approval.status !== "pending") throw new Error(`conflict:approval_${approval.status}`);
+    if (approval.status !== "pending") throw new Error( conflict:approval_${approval.status}`);
     const status = decision === "approve" ? "approved" : "rejected";
     const updated = await client.query(
       `update approvals set status=$1, decided_by_operator_id=$2, decided_at=now(), decision_note=$3, version=version+1 where id=$4 returning *`,
@@ -269,7 +268,6 @@ async function decideApproval(request, approvalId, decision) {
 }
 
 async function runScenario(request, scenario) {
-  requireApiKey(request);
   const body = await readJson(request);
   const workspaceId = body.workspaceId ?? body.workspace_id;
   const operatorId = body.operatorId ?? body.operator_id;
@@ -283,7 +281,6 @@ async function runScenario(request, scenario) {
 }
 
 async function guardTool(request) {
-  requireApiKey(request);
   const body = await readJson(request);
   const workspaceId = body.workspaceId ?? body.workspace_id;
   const teamId = body.teamId ?? body.team_id;
@@ -303,9 +300,9 @@ export default {
       const url = new URL(request.url);
       const path = url.pathname.replace(/\/+$/, "") || "/";
       if (request.method === "GET" && (path === "/" || path === "/health")) return json({ ok: true, service: "actcontrol" });
-      // Every non-health control-plane route is private. The Vercel server proxy
-      // injects the shared key; browsers never receive it.
-      requireApiKey(request);
+      // Every non-health control-plane route is private. Production trusts only
+      // the scoped Vercel OIDC workload identity; an API key is an optional local/admin fallback.
+      await requireControlAuth(request);
       if (request.method === "GET" && path === "/fleet") return getFleet(url);
       if (request.method === "GET" && path === "/approvals") return getApprovals(url);
       if (request.method === "GET" && path === "/usage") return getUsage(url);

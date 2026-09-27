@@ -1,15 +1,11 @@
-import { createHmac } from "node:crypto";
+import { getVercelOidcToken } from "@vercel/oidc";
 import { NextRequest } from "next/server";
 
-const eventsBase = process.env.EVENTS_API_URL;
-const streamSecret = process.env.EVENT_STREAM_SECRET ?? process.env.CONTROL_API_KEY;
+const eventsBase = process.env.EVENTS_API_URL ?? "https://br-gentle-butterfly-b57bd2r5-actevents.compute.c-7.us-east-2.aws.neon.tech/";
 const demoWorkspaceId = process.env.DEMO_WORKSPACE_ID ?? "ws_demo";
 const allowedTeams = new Set(["team_operations", "team_revenue"]);
 
 export async function GET(request: NextRequest) {
-  if (!eventsBase || !streamSecret) {
-    return Response.json({ error: "event_stream_proxy_not_configured" }, { status: 503 });
-  }
   const workspaceId = request.nextUrl.searchParams.get("workspace_id");
   const teamId = request.nextUrl.searchParams.get("team_id");
   const rawAfter = Number(request.nextUrl.searchParams.get("after_sequence") ?? "0");
@@ -17,16 +13,27 @@ export async function GET(request: NextRequest) {
   if (workspaceId !== demoWorkspaceId) return Response.json({ error: "demo_scope_forbidden" }, { status: 403 });
   if (teamId && !allowedTeams.has(teamId)) return Response.json({ error: "demo_scope_forbidden" }, { status: 403 });
 
-  const now = Math.floor(Date.now() / 1000);
-  const claims = { v: 1, workspace_id: workspaceId, team_id: teamId || null, iat: now, exp: now + 120 };
-  const payload = Buffer.from(JSON.stringify(claims)).toString("base64url");
-  const signature = createHmac("sha256", streamSecret).update(payload).digest("base64url");
-  const token = `${payload}.${signature}`;
+  const oidcToken = await getVercelOidcToken();
+  if (!oidcToken) return Response.json({ error: "event_stream_identity_unavailable" }, { status: 503 });
+
+  const tokenEndpoint = new URL("token", eventsBase.endsWith("/") ? eventsBase : `${eventsBase}/`);
+  tokenEndpoint.searchParams.set("workspace_id", workspaceId);
+  if (teamId) tokenEndpoint.searchParams.set("team_id", teamId);
+  const issued = await fetch(tokenEndpoint, {
+    headers: { authorization: `Bearer ${oidcToken}` },
+    cache: "no-store",
+  });
+  if (!issued.ok) {
+    return Response.json({ error: "event_stream_token_rejected", upstream_status: issued.status }, { status: issued.status });
+  }
+  const payload = await issued.json() as { token?: string; expires_at?: number };
+  if (!payload.token || !payload.expires_at) return Response.json({ error: "event_stream_token_invalid" }, { status: 502 });
+
   const upstream = new URL("stream", eventsBase.endsWith("/") ? eventsBase : `${eventsBase}/`);
   upstream.searchParams.set("workspace_id", workspaceId);
   if (teamId) upstream.searchParams.set("team_id", teamId);
   if (afterSequence > 0) upstream.searchParams.set("after_sequence", String(afterSequence));
-  upstream.searchParams.set("token", token);
+  upstream.searchParams.set("token", payload.token);
 
-  return Response.json({ url: upstream.toString(), expires_at: claims.exp }, { headers: { "cache-control": "no-store" } });
+  return Response.json({ url: upstream.toString(), expires_at: payload.expires_at }, { headers: { "cache-control": "no-store" } });
 }

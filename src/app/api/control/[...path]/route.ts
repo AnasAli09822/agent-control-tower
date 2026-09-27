@@ -1,6 +1,7 @@
+import { getVercelOidcToken } from "@vercel/oidc";
 import { NextRequest } from "next/server";
 
-const controlBase = process.env.CONTROL_API_URL;
+const controlBase = process.env.CONTROL_API_URL ?? "https://br-gentle-butterfly-b57bd2r5-actcontrol.compute.c-7.us-east-2.aws.neon.tech/";
 const apiKey = process.env.CONTROL_API_KEY;
 const demoWorkspaceId = process.env.DEMO_WORKSPACE_ID ?? "ws_demo";
 const demoOperatorId = process.env.DEMO_OPERATOR_ID ?? "operator_demo";
@@ -47,7 +48,7 @@ function assertWriteScope(body: Record<string, unknown>) {
 
 async function proxy(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   try {
-    if (!controlBase || !apiKey) return Response.json({ error: "control_proxy_not_configured" }, { status: 503 });
+    if (!controlBase) return Response.json({ error: "control_proxy_not_configured" }, { status: 503 });
     const { path } = await context.params;
     const joinedPath = path.join("/");
     assertPath(joinedPath, request.method);
@@ -66,7 +67,10 @@ async function proxy(request: NextRequest, context: { params: Promise<{ path: st
     const upstream = new URL(joinedPath, controlBase.endsWith("/") ? controlBase : `${controlBase}/`);
     upstream.search = request.nextUrl.search;
     const headers = new Headers();
-    headers.set("x-api-key", apiKey);
+    const oidcToken = await getVercelOidcToken();
+    if (oidcToken) headers.set("authorization", `Bearer ${oidcToken}`);
+    else if (apiKey) headers.set("x-api-key", apiKey);
+    else return Response.json({ error: "control_proxy_identity_unavailable" }, { status: 503 });
     headers.set("x-correlation-id", request.headers.get("x-correlation-id") ?? crypto.randomUUID());
     const idem = request.headers.get("idempotency-key");
     if (idem) headers.set("idempotency-key", idem);
