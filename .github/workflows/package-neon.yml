@@ -25,12 +25,12 @@ jobs:
       - name: Bundle Neon Functions
         run: |
           set -euo pipefail
-          npx --yes @vercel/ncc@0.38.4 build functions/actcontrol/index.mjs -o dist/actcontrol
-          npx --yes @vercel/ncc@0.38.4 build functions/actevents/index.mjs -o dist/actevents
+          npx --yes @vercel/ncc@0.38.4 build functions/actcontrol/index.mjs -m -o dist/actcontrol
+          npx --yes @vercel/ncc@0.38.4 build functions/actevents/index.mjs -m -o dist/actevents
           node --check dist/actcontrol/index.mjs
           node --check dist/actevents/index.mjs
-          (cd dist/actcontrol && zip -q ../actcontrol.zip index.mjs)
-          (cd dist/actevents && zip -q ../actevents.zip index.mjs)
+          (cd dist/actcontrol && zip -9 -q ../actcontrol.zip index.mjs)
+          (cd dist/actevents && zip -9 -q ../actevents.zip index.mjs)
           sha256sum dist/actcontrol.zip dist/actevents.zip | tee dist/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
