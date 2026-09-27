@@ -47,11 +47,11 @@ jobs:
       - name: Link isolated Neon branch
         run: neon link --project-id "$NEON_PROJECT_ID" --branch-id "$NEON_BRANCH_ID"
 
-      - name: Resolve isolated database URL
+      - name: Resolve dedicated Foresee database URL
         shell: bash
         run: |
           set -euo pipefail
-          DATABASE_URL=$(neon connection-string "$NEON_BRANCH_ID" --database-name controltower --role-name controltower_owner --pooled)
+          DATABASE_URL=$(neon connection-string "$NEON_BRANCH_ID" --database-name foresee --role-name controltower_owner --pooled)
           echo "::add-mask::$DATABASE_URL"
           echo "DATABASE_URL=$DATABASE_URL" >> "$GITHUB_ENV"
 
@@ -138,6 +138,7 @@ jobs:
         run: |
           echo '### Foresee live deployment' >> "$GITHUB_STEP_SUMMARY"
           echo "- URL: $FORESEE_URL" >> "$GITHUB_STEP_SUMMARY"
+          echo '- Isolation: dedicated Neon branch + dedicated PostgreSQL database + per-session UUID' >> "$GITHUB_STEP_SUMMARY"
           echo '- Real PostgreSQL integration suite: passed' >> "$GITHUB_STEP_SUMMARY"
           echo '- Golden path HTTP smoke: passed' >> "$GITHUB_STEP_SUMMARY"
           echo '- Manual rollback HTTP smoke: passed' >> "$GITHUB_STEP_SUMMARY"
