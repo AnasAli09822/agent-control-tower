@@ -53,8 +53,8 @@ jobs:
           case "$target" in
             validation)
               branch_id="br-little-art-b5e06cd8"
-              control_slug="actctl927"
-              events_slug="actevt927"
+              control_slug="actctlv${GITHUB_RUN_NUMBER}"
+              events_slug="actevtv${GITHUB_RUN_NUMBER}"
               ;;
             production)
               branch_id="br-gentle-butterfly-b57bd2r5"
@@ -242,7 +242,7 @@ jobs:
             echo "- Control: $CONTROL_URL"
             echo "- Events: $EVENTS_URL"
             if [[ "$DEPLOY_TARGET" == "validation" ]]; then
-              echo "- Validation uses isolated ephemeral application secrets"
+              echo "- Validation uses isolated ephemeral application secrets and unique slugs"
               echo "- Health, 401 auth gates, database fleet read, signed events and SSE: passed"
             else
               echo "- Production application secrets retained in Neon Functions"
