@@ -102,6 +102,17 @@ jobs:
           set -euo pipefail
           neon link --project-id "$NEON_PROJECT_ID" --branch-id "$NEON_BRANCH_ID"
 
+      - name: Preflight production application secrets
+        if: env.DEPLOY_TARGET == 'production'
+        shell: bash
+        run: |
+          set -euo pipefail
+          neon functions get "$CONTROL_SLUG" --branch "$NEON_BRANCH_ID" --list-env-variables > /tmp/preflight-control-env.txt
+          neon functions get "$EVENTS_SLUG" --branch "$NEON_BRANCH_ID" --list-env-variables > /tmp/preflight-events-env.txt
+          grep -q 'CONTROL_API_KEY' /tmp/preflight-control-env.txt || { echo '::error::Production actcontrol is missing CONTROL_API_KEY; refusing deploy'; exit 1; }
+          grep -q 'EVENT_STREAM_SECRET' /tmp/preflight-events-env.txt || { echo '::error::Production actevents is missing EVENT_STREAM_SECRET; refusing deploy'; exit 1; }
+          echo 'Production application secret names are present; safe to preserve them during deploy.'
+
       - name: Prepare isolated validation environment
         if: env.DEPLOY_TARGET == 'validation'
         shell: bash
