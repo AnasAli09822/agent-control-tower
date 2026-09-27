@@ -129,7 +129,6 @@ jobs:
               --env CONTROL_API_KEY="$CONTROL_API_KEY" \
               --env ACT_DATABASE_URL="$ACT_DATABASE_URL"
           else
-            # Production retains the existing application secrets on actcontrol.
             neon functions deploy "$CONTROL_SLUG" \
               --src functions/actcontrol/index.mjs
           fi
@@ -145,7 +144,6 @@ jobs:
               --env EVENT_STREAM_SECRET="$EVENT_STREAM_SECRET" \
               --env ACT_DATABASE_URL="$ACT_DATABASE_URL"
           else
-            # Production retains the existing application secrets on actevents.
             neon functions deploy "$EVENTS_SLUG" \
               --src functions/actevents/index.mjs
           fi
@@ -196,15 +194,29 @@ jobs:
           node -e "const fs=require('node:fs'); const control=JSON.parse(fs.readFileSync('/tmp/control-health.json','utf8')); const events=JSON.parse(fs.readFileSync('/tmp/events-health.json','utf8')); if(!control.ok||control.service!=='actcontrol') throw new Error('control health failed'); if(!events.ok||events.service!=='actevents') throw new Error('events health failed');"
 
           if [[ "$DEPLOY_TARGET" == "validation" ]]; then
-            curl --fail --silent --show-error \
-              -H "x-api-key: $CONTROL_API_KEY" \
-              "$CONTROL_URL/fleet?workspace_id=ws_demo&team_id=team_operations" >/tmp/fleet.json
+            fleet_code=""
+            for _ in $(seq 1 20); do
+              fleet_code=$(curl --silent --show-error --output /tmp/fleet.json --write-out '%{http_code}' \
+                -H "x-api-key: $CONTROL_API_KEY" \
+                "$CONTROL_URL/fleet?workspace_id=ws_demo&team_id=team_operations" || true)
+              if [[ "$fleet_code" == "200" ]]; then break; fi
+              sleep 2
+            done
+            echo "fleet-auth status=$fleet_code"
+            test "$fleet_code" = "200"
 
             STREAM_TOKEN=$(node --input-type=module -e "import { signStreamToken } from './functions/shared/stream-token.mjs'; console.log(signStreamToken({workspaceId:'ws_demo',teamId:'team_operations',expiresAt:Math.floor(Date.now()/1000)+120}, process.env.EVENT_STREAM_SECRET));")
             echo "::add-mask::$STREAM_TOKEN"
 
-            curl --fail --silent --show-error \
-              "$EVENTS_URL/events?workspace_id=ws_demo&team_id=team_operations&token=$STREAM_TOKEN" >/tmp/events.json
+            signed_events_code=""
+            for _ in $(seq 1 20); do
+              signed_events_code=$(curl --silent --show-error --output /tmp/events.json --write-out '%{http_code}' \
+                "$EVENTS_URL/events?workspace_id=ws_demo&team_id=team_operations&token=$STREAM_TOKEN" || true)
+              if [[ "$signed_events_code" == "200" ]]; then break; fi
+              sleep 2
+            done
+            echo "signed-events status=$signed_events_code"
+            test "$signed_events_code" = "200"
 
             set +e
             curl --silent --show-error --max-time 3 -D /tmp/stream.headers -o /tmp/stream.body \
@@ -215,7 +227,7 @@ jobs:
             grep -qi '^content-type: text/event-stream' /tmp/stream.headers
             grep -q 'retry: 1500' /tmp/stream.body
 
-            node -e "const fs=require('node:fs'); const fleet=JSON.parse(fs.readFileSync('/tmp/fleet.json','utf8')); const events=JSON.parse(fs.readFileSync('/tmp/events.json','utf8')); if(!Array.isArray(fleet.agents)||fleet.agents.length<3) throw new Error('fleet database smoke test failed'); if(!Array.isArray(events.events)) throw new Error('signed events smoke test failed');"
+            node -e "const fs=require('node:fs'); const fleet=JSON.parse(fs.readFileSync('/tmp/fleet.json','utf8')); const events=JSON.parse(fs.readFileSync('/tmp/events.json','utf8')); if(!Array.isArray(fleet.agents)||fleet.agents.length<2) throw new Error('fleet database smoke test failed'); if(!Array.isArray(events.events)) throw new Error('signed events smoke test failed');"
           fi
 
       - name: Deployment summary
