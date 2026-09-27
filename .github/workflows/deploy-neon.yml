@@ -28,10 +28,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
+      # The official Neon GitHub integration creates this repository secret.
       NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
-      CONTROL_API_KEY: ${{ secrets.CONTROL_API_KEY }}
-      EVENT_STREAM_SECRET: ${{ secrets.EVENT_STREAM_SECRET }}
-      NEON_PROJECT_ID: weathered-poetry-97205616
+      # The integration also creates NEON_PROJECT_ID as a repository variable.
+      # Keep the known project ID as a safe fallback for this repository only.
+      NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID || 'weathered-poetry-97205616' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -70,18 +71,16 @@ jobs:
           echo "CONTROL_URL=https://${branch_id}-actcontrol.compute.c-7.us-east-2.aws.neon.tech" >> "$GITHUB_ENV"
           echo "EVENTS_URL=https://${branch_id}-actevents.compute.c-7.us-east-2.aws.neon.tech" >> "$GITHUB_ENV"
 
-      - name: Verify deployment secrets
+      - name: Verify Neon integration credential
         shell: bash
         run: |
           set -euo pipefail
-          for name in NEON_API_KEY CONTROL_API_KEY EVENT_STREAM_SECRET; do
-            if [[ -z "${!name:-}" ]]; then
-              echo "::error::$name is not configured as a repository Actions secret"
-              exit 1
-            fi
-          done
-          if [[ "$CONTROL_API_KEY" == "$EVENT_STREAM_SECRET" ]]; then
-            echo "::error::CONTROL_API_KEY and EVENT_STREAM_SECRET must be different"
+          if [[ -z "${NEON_API_KEY:-}" ]]; then
+            echo "::error::NEON_API_KEY is not available to this repository workflow. Reconnect the Neon GitHub integration to this repository."
+            exit 1
+          fi
+          if [[ -z "${NEON_PROJECT_ID:-}" ]]; then
+            echo "::error::NEON_PROJECT_ID is not available"
             exit 1
           fi
 
@@ -104,19 +103,26 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Do not pass application secrets here. Neon Functions merges/preserves
+          # environment variables from previous deployments when --env is omitted.
           neon functions deploy actcontrol \
-            --src functions/actcontrol/index.mjs \
-            --env CONTROL_API_KEY="$CONTROL_API_KEY" \
-            --env EVENT_STREAM_SECRET="$EVENT_STREAM_SECRET"
+            --src functions/actcontrol/index.mjs
 
       - name: Deploy event API
         shell: bash
         run: |
           set -euo pipefail
           neon functions deploy actevents \
-            --src functions/actevents/index.mjs \
-            --env CONTROL_API_KEY="$CONTROL_API_KEY" \
-            --env EVENT_STREAM_SECRET="$EVENT_STREAM_SECRET"
+            --src functions/actevents/index.mjs
+
+      - name: Verify retained function secret names
+        shell: bash
+        run: |
+          set -euo pipefail
+          neon functions get actcontrol --branch "$NEON_BRANCH_ID" --list-env-variables > /tmp/actcontrol-env.txt
+          neon functions get actevents --branch "$NEON_BRANCH_ID" --list-env-variables > /tmp/actevents-env.txt
+          grep -q 'CONTROL_API_KEY' /tmp/actcontrol-env.txt
+          grep -q 'EVENT_STREAM_SECRET' /tmp/actevents-env.txt
 
       - name: Smoke test hardened endpoints
         shell: bash
@@ -134,18 +140,12 @@ jobs:
           test "$control_code" = "401"
           test "$events_code" = "401"
 
-          curl --fail --silent --show-error \
-            -H "x-api-key: $CONTROL_API_KEY" \
-            "$CONTROL_URL/fleet?workspace_id=ws_demo" >/tmp/fleet.json
-
           node - <<'NODE'
           const fs = require('node:fs');
           const control = JSON.parse(fs.readFileSync('/tmp/control-health.json','utf8'));
           const events = JSON.parse(fs.readFileSync('/tmp/events-health.json','utf8'));
-          const fleet = JSON.parse(fs.readFileSync('/tmp/fleet.json','utf8'));
           if (!control.ok || control.service !== 'actcontrol') throw new Error('control health failed');
           if (!events.ok || events.service !== 'actevents') throw new Error('events health failed');
-          if (!Array.isArray(fleet.agents) || fleet.agents.length < 3) throw new Error('fleet smoke test failed');
           NODE
 
       - name: Deployment summary
@@ -157,5 +157,6 @@ jobs:
             echo "- Branch: $NEON_BRANCH_ID"
             echo "- Control: $CONTROL_URL"
             echo "- Events: $EVENTS_URL"
-            echo "- Hardened health/auth/fleet smoke tests: passed"
+            echo "- Existing application secrets retained in Neon Functions"
+            echo "- Hardened health and anonymous-auth rejection smoke tests: passed"
           } >> "$GITHUB_STEP_SUMMARY"
