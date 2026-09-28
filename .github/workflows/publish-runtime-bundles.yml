@@ -1,0 +1,33 @@
+name: publish-runtime-bundles
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/publish-runtime-bundles.yml]
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install
+      - run: npm run validate:source
+      - name: Build pinned bundles
+        run: |
+          npx --yes @vercel/ncc build functions/actcontrol/index.mjs -o /tmp/control
+          npx --yes @vercel/ncc build functions/actevents/index.mjs -o /tmp/events
+          sha256sum /tmp/control/index.mjs /tmp/events/index.mjs
+      - name: Publish isolated runtime branch
+        run: |
+          git switch --orphan runtime-bundles-20260929
+          git rm -rf .
+          mkdir -p actcontrol actevents
+          cp /tmp/control/index.mjs actcontrol/index.mjs
+          cp /tmp/events/index.mjs actevents/index.mjs
+          sha256sum actcontrol/index.mjs actevents/index.mjs > SHA256SUMS.txt
+          git add actcontrol/index.mjs actevents/index.mjs SHA256SUMS.txt
+          git -c user.name=github-actions -c user.email=41898282+github-actions[bot]@users.noreply.github.com commit -m "Publish pinned Neon runtime bundles"
+          git push origin runtime-bundles-20260929
