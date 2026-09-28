@@ -1,6 +1,13 @@
+import { randomBytes } from "node:crypto";
 import handler from "./handler.mjs";
 import { errorResponse } from "../shared/db.mjs";
 import { requireVercelOidc } from "../shared/vercel-oidc.mjs";
+
+// The validated handler still contains its original API-key guard. Keep that
+// defense-in-depth without managing a long-lived secret: every Neon isolate
+// gets a fresh, unexported key at boot and only this wrapper can inject it.
+const INTERNAL_CONTROL_KEY = randomBytes(32).toString("base64url");
+process.env.CONTROL_API_KEY = INTERNAL_CONTROL_KEY;
 
 function isHealth(request) {
   const url = new URL(request.url);
@@ -9,10 +16,8 @@ function isHealth(request) {
 }
 
 function withInternalKey(request) {
-  const key = process.env.CONTROL_API_KEY;
-  if (!key) throw new Error("CONTROL_API_KEY is required in Neon runtime");
   const headers = new Headers(request.headers);
-  headers.set("x-api-key", key);
+  headers.set("x-api-key", INTERNAL_CONTROL_KEY);
   return new Request(request, { headers });
 }
 
@@ -21,15 +26,9 @@ export default {
     try {
       if (isHealth(request)) return handler.fetch(request);
 
-      // Direct administrative API-key access stays Neon-only. Normal Vercel
-      // traffic authenticates with short-lived workload identity instead.
-      const expected = process.env.CONTROL_API_KEY;
-      const actual = request.headers.get("x-api-key");
-      if (!(expected && actual === expected)) await requireVercelOidc(request);
-
-      // The previously validated handler keeps its existing API-key guard.
-      // The wrapper injects the Neon-local key only after workload identity
-      // has been verified, so the browser and Vercel never receive it.
+      // All external control-plane traffic must carry a short-lived Vercel
+      // workload identity. No static API key is accepted at the public edge.
+      await requireVercelOidc(request);
       return handler.fetch(withInternalKey(request));
     } catch (error) {
       return errorResponse(error);
