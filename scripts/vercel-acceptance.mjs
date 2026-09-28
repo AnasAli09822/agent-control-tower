@@ -1,4 +1,4 @@
-// acceptance probe: identity-safe production backend
+// acceptance probe: final containment acceptance
 const isVercel = process.env.VERCEL === "1";
 if (!isVercel) {
   console.log("vercel-acceptance: skipped outside Vercel");
