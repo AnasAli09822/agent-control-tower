@@ -1,4 +1,4 @@
-import { appendAudit, appendEvent, nextBigintId } from "./db.mjs";
+import { appendAudit, appendEvent } from "./db.mjs";
 
 const MODEL = "simulated-control-agent-v1";
 
@@ -23,28 +23,27 @@ export async function recordStep(client, ctx, spec) {
   const cachedTokens = spec.cachedTokens ?? 0;
   const costUsd = spec.costUsd ?? Number(((inputTokens * 0.000002) + (outputTokens * 0.000008) + (cachedTokens * 0.0000005)).toFixed(8));
   const durationMs = spec.durationMs ?? 240;
-  const reasoningId = await nextBigintId(client, "reasoning_steps");
   const { rows } = await client.query(
     `insert into reasoning_steps(
-       id,workspace_id,team_id,agent_id,run_id,task_id,step_no,goal,observation,evidence_json,
+       workspace_id,team_id,agent_id,run_id,task_id,step_no,goal,observation,evidence_json,
        decision_summary,policy_result,intended_action,action_result,confidence,
        input_tokens,output_tokens,cached_tokens,cost_usd,duration_ms
-     ) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
+     ) values($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
      returning *`,
     [
-      reasoningId, ctx.workspaceId, ctx.teamId, ctx.agentId, ctx.runId, ctx.taskId, stepNo,
+      ctx.workspaceId, ctx.teamId, ctx.agentId, ctx.runId, ctx.taskId, stepNo,
       spec.goal, spec.observation, JSON.stringify(spec.evidence ?? []), spec.decisionSummary,
       spec.policyResult ?? "allow", spec.intendedAction ?? null, spec.actionResult ?? null,
       spec.confidence ?? 0.88, inputTokens, outputTokens, cachedTokens, costUsd, durationMs,
     ],
   );
-  const usageId = await nextBigintId(client, "usage_ledger");
+  const reasoningId = rows[0].id;
   await client.query(
     `insert into usage_ledger(
-       id,workspace_id,team_id,agent_id,run_id,task_id,reasoning_step_id,model,source,
+       workspace_id,team_id,agent_id,run_id,task_id,reasoning_step_id,model,source,
        input_tokens,output_tokens,cached_tokens,cost_usd,duration_ms,idempotency_key
-     ) values($1,$2,$3,$4,$5,$6,$7,$8,'simulated',$9,$10,$11,$12,$13,$14)`,
-    [usageId, ctx.workspaceId, ctx.teamId, ctx.agentId, ctx.runId, ctx.taskId, reasoningId, MODEL,
+     ) values($1,$2,$3,$4,$5,$6,$7,'simulated',$8,$9,$10,$11,$12,$13)`,
+    [ctx.workspaceId, ctx.teamId, ctx.agentId, ctx.runId, ctx.taskId, reasoningId, MODEL,
       inputTokens, outputTokens, cachedTokens, costUsd, durationMs, `${ctx.runId}:usage:${stepNo}`],
   );
   await appendEvent(client, {
