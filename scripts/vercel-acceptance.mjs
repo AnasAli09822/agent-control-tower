@@ -34,4 +34,32 @@ if (!eventPage.ok) throw new Error(`vercel-acceptance: events ${eventPage.status
 const parsedEvents = eventBody ? JSON.parse(eventBody) : null;
 if (!Array.isArray(parsedEvents?.events)) throw new Error("vercel-acceptance: events contract failed");
 
-console.log(JSON.stringify({ ok: true, agents: agents.length, events_sampled: parsedEvents.events.length, oidc: true }));
+const operatorId = "operator_demo";
+const post = (url, body, key) => json(url, {
+  method: "POST",
+  headers: { "content-type": "application/json", "idempotency-key": key },
+  body: JSON.stringify(body),
+});
+
+await post(`${control}/scenarios/start-all`, { workspaceId: workspace, operatorId }, `accept-start-${Date.now()}`);
+const revenueFleet = await json(`${control}/fleet?workspace_id=${workspace}&team_id=team_revenue`);
+if (!Array.isArray(revenueFleet?.agents) || revenueFleet.agents.some((a) => a.team_id !== "team_revenue")) throw new Error("vercel-acceptance: team isolation failed");
+
+const approvals = await json(`${control}/approvals?workspace_id=${workspace}`);
+if (!Array.isArray(approvals?.approvals)) throw new Error("vercel-acceptance: approvals contract failed");
+
+const usage = await json(`${control}/usage?workspace_id=${workspace}`);
+if (usage?.total_tokens == null || usage?.total_cost_usd == null) throw new Error("vercel-acceptance: usage contract failed");
+
+const fleetAfterNormal = await json(`${control}/fleet?workspace_id=${workspace}`);
+const replayRun = fleetAfterNormal?.agents?.find((a) => a.current_run_id)?.current_run_id;
+if (!replayRun) throw new Error("vercel-acceptance: replay run missing");
+const replay = await json(`${control}/replay/${encodeURIComponent(replayRun)}?workspace_id=${workspace}&limit=10`);
+if (!Array.isArray(replay?.steps)) throw new Error("vercel-acceptance: replay contract failed");
+
+const audit = await json(`${control}/audit/export?workspace_id=${workspace}&limit=50`);
+if (!Array.isArray(audit?.audit)) throw new Error("vercel-acceptance: audit export contract failed");
+
+await post(`${control}/scenarios/rogue-infra`, { workspaceId: workspace, operatorId }, `accept-rogue-${Date.now()}`);
+
+console.log(JSON.stringify({ ok: true, agents: agents.length, events_sampled: parsedEvents.events.length, oidc: true, team_isolation: true, approvals: true, usage: true, replay: true, audit: true, rogue: true }));
