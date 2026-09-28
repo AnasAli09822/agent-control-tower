@@ -233,7 +233,7 @@ async function intervene(request, url, agentId, commandName) {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (message.startsWith("stale_worker_guard_failed")) throw error;
-      if (!message.includes("stale control epoch")) throw new Error(`stale_worker_guard_failed:${message}`);
+      if (!message.includes("stale control epoch") && !message.includes("tool execution blocked by run state: killed")) throw new Error(`stale_worker_guard_failed:${message}`);
       blockedReason = message;
     }
     const staleActionId = await withTx((client) => recordStaleWorkerDenial(client, { ...outcome.staleContext, correlationId: corr }));
