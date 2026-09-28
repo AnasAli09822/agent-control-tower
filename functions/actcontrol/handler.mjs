@@ -1,5 +1,5 @@
 import {
-  pool, withTx, appendEvent, appendAudit, nextBigintId,
+  pool, withTx, appendEvent, appendAudit,
   json, errorResponse, readJson, requireApiKey, idempotencyKey, correlationId,
 } from "../shared/db.mjs";
 import {
@@ -198,11 +198,10 @@ async function intervene(request, url, agentId, commandName) {
       }
     }
 
-    const interventionId = await nextBigintId(client, "interventions");
     const intervention = await client.query(
-      `insert into interventions(id,workspace_id,team_id,operator_id,agent_id,run_id,task_id,command,reason,expected_version,resulting_control_epoch,idempotency_key)
-       values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) returning *`,
-      [interventionId, workspaceId, teamId, operatorId, agentId, context.run_id, context.task_id, commandName, body.reason ?? `${commandName} from operator console`, body.expectedVersion ?? null, newEpoch.toString(), idem],
+      `insert into interventions(workspace_id,team_id,operator_id,agent_id,run_id,task_id,command,reason,expected_version,resulting_control_epoch,idempotency_key)
+       values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) returning *`,
+      [workspaceId, teamId, operatorId, agentId, context.run_id, context.task_id, commandName, body.reason ?? `${commandName} from operator console`, body.expectedVersion ?? null, newEpoch.toString(), idem],
     );
 
     const eventType = commandName === "kill" ? "agent.kill" : `agent.${commandName}`;
