@@ -23,7 +23,6 @@ jobs:
       - name: Publish isolated runtime branch
         run: |
           git switch --orphan runtime-bundles-20260929
-          git rm -rf .
           mkdir -p actcontrol actevents
           cp /tmp/control/index.mjs actcontrol/index.mjs
           cp /tmp/events/index.mjs actevents/index.mjs
