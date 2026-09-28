@@ -54,15 +54,13 @@ export async function appendEvent(client, event) {
   // event_id is global; sequence is workspace-scoped and is assigned atomically
   // by the database trigger. Keeping these two counters independent prevents
   // event_id collisions once more than one workspace emits sequence=1,2,...
-  const eventId = await nextBigintId(client, "agent_events");
   const { rows } = await client.query(
     `insert into agent_events(
-       event_id, workspace_id, team_id, agent_id, run_id, task_id,
+       workspace_id, team_id, agent_id, run_id, task_id,
        event_type, severity, sequence, correlation_id, causation_event_id, payload_json
-     ) values ($1,$2,$3,$4,$5,$6,$7,$8,null,$9,$10,$11::jsonb)
+     ) values ($1,$2,$3,$4,$5,$6,$7,null,$8,$9,$10::jsonb)
      returning *`,
     [
-      eventId,
       event.workspaceId,
       event.teamId,
       event.agentId ?? null,
@@ -79,15 +77,14 @@ export async function appendEvent(client, event) {
 }
 
 export async function appendAudit(client, audit) {
-  const id = await nextBigintId(client, "audit_events");
   const { rows } = await client.query(
     `insert into audit_events(
-       id, workspace_id, team_id, actor_type, actor_id, agent_id, run_id, task_id,
+       workspace_id, team_id, actor_type, actor_id, agent_id, run_id, task_id,
        action, target_type, target_id, decision, risk_score, result, correlation_id, payload_json
-     ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16::jsonb)
+     ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15::jsonb)
      returning *`,
     [
-      id, audit.workspaceId, audit.teamId ?? null, audit.actorType, audit.actorId,
+      audit.workspaceId, audit.teamId ?? null, audit.actorType, audit.actorId,
       audit.agentId ?? null, audit.runId ?? null, audit.taskId ?? null,
       audit.action, audit.targetType ?? null, audit.targetId ?? null,
       audit.decision ?? null, audit.riskScore ?? null, audit.result,
