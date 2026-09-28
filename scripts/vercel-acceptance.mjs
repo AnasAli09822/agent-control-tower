@@ -8,7 +8,7 @@ const token = process.env.VERCEL_OIDC_TOKEN;
 if (!token) throw new Error("vercel-acceptance: VERCEL_OIDC_TOKEN missing");
 
 const control = "https://br-gentle-butterfly-b57bd2r5-actctlp2.compute.c-7.us-east-2.aws.neon.tech";
-const events = "https://br-gentle-butterfly-b57bd2r5-actevents.compute.c-7.us-east-2.aws.neon.tech";
+const events = "https://br-gentle-butterfly-b57bd2r5-actevtp2.compute.c-7.us-east-2.aws.neon.tech";
 const workspace = "ws_demo";
 const team = "team_operations";
 const auth = { authorization: `Bearer ${token}`, accept: "application/json" };
