@@ -1,5 +1,5 @@
+import { createHash } from "node:crypto";
 import { pool, json, errorResponse } from "../shared/db.mjs";
-import { verifyStreamToken } from "../shared/stream-token.mjs";
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -8,6 +8,36 @@ function scope(url) {
   const teamId = url.searchParams.get("team_id");
   if (!workspaceId) throw new Error("bad_request:workspace_id_required");
   return { workspaceId, teamId };
+}
+
+function tokenDigest(token) {
+  return createHash("sha256").update(token).digest("hex");
+}
+
+async function verifyStreamToken(token, workspaceId, teamId) {
+  if (!token) throw new Error("unauthorized:missing_stream_token");
+  const digest = tokenDigest(token);
+  const { rows } = await pool.query(
+    `select payload_json
+       from audit_events
+      where workspace_id=$1
+        and team_id is not distinct from $2
+        and action='stream.token.issue'
+        and target_type='stream_token'
+        and target_id=$3
+        and result='issued'
+      order by created_at desc, id desc
+      limit 1`,
+    [workspaceId, teamId ?? null, digest],
+  );
+  if (!rows.length) throw new Error("unauthorized:invalid_stream_token");
+  const payload = rows[0].payload_json ?? {};
+  const expiresAt = Number(payload.expires_at);
+  if (!Number.isInteger(expiresAt) || expiresAt < Math.floor(Date.now() / 1000)) {
+    throw new Error("unauthorized:expired_stream_token");
+  }
+  if ((payload.team_id ?? null) !== (teamId ?? null)) throw new Error("forbidden:stream_scope_mismatch");
+  return true;
 }
 
 async function readEvents(workspaceId, teamId, after, limit = 100) {
@@ -46,7 +76,7 @@ export default {
       if (url.pathname === "/health" || url.pathname === "/") return json({ ok: true, service: "actevents" }, 200, { "access-control-allow-origin": "*" });
 
       const { workspaceId, teamId } = scope(url);
-      verifyStreamToken(url.searchParams.get("token"), workspaceId, teamId, process.env.EVENT_STREAM_SECRET ?? process.env.CONTROL_API_KEY);
+      await verifyStreamToken(url.searchParams.get("token"), workspaceId, teamId);
       const queryAfter = Number(url.searchParams.get("after_sequence") || 0);
       const headerAfter = Number(request.headers.get("last-event-id") || 0);
       const after = Math.max(Number.isFinite(queryAfter) ? queryAfter : 0, Number.isFinite(headerAfter) ? headerAfter : 0);
