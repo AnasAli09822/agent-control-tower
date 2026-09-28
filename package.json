@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "node scripts/vercel-acceptance.mjs",
     "start": "next start",
     "typecheck:core": "tsc -p tsconfig.core.json --noEmit",
     "test:core": "node --experimental-strip-types --test tests/core.test.ts",
