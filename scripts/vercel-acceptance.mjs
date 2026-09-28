@@ -20,7 +20,7 @@ async function json(url, options = {}) {
   return body ? JSON.parse(body) : null;
 }
 
-const fleet = await json(`${control}/fleet?workspace_id=${workspace}&team_id=${team}`);
+const fleet = await json(`${control}/fleet?workspace_id=${workspace}`);
 const agents = Array.isArray(fleet) ? fleet : fleet?.agents;
 if (!Array.isArray(agents) || agents.length < 3) throw new Error("vercel-acceptance: fleet contract failed");
 
