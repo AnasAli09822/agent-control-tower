@@ -1,4 +1,4 @@
-// acceptance probe: Neon event path/status diagnostics enabled
+// acceptance probe: Neon event path/status diagnostics v2
 const isVercel = process.env.VERCEL === "1";
 if (!isVercel) {
   console.log("vercel-acceptance: skipped outside Vercel");
