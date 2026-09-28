@@ -61,5 +61,10 @@ const audit = await json(`${control}/audit/export?workspace_id=${workspace}&limi
 if (!Array.isArray(audit?.audit)) throw new Error("vercel-acceptance: audit export contract failed");
 
 await post(`${control}/scenarios/rogue-infra`, { workspaceId: workspace, operatorId }, `accept-rogue-${Date.now()}`);
+const interventionBody = { workspaceId: workspace, teamId: team, operatorId, reason: "production acceptance" };
+await post(`${control}/agents/agent_infra/resume`, interventionBody, `accept-resume-${Date.now()}`);
+await post(`${control}/agents/agent_infra/pause`, interventionBody, `accept-pause-${Date.now()}`);
+const killed = await post(`${control}/agents/agent_infra/kill`, interventionBody, `accept-kill-${Date.now()}`);
+if (killed?.staleWorkerGuard?.blocked !== true) throw new Error("vercel-acceptance: stale worker guard failed");
 
-console.log(JSON.stringify({ ok: true, agents: agents.length, events_sampled: parsedEvents.events.length, oidc: true, team_isolation: true, approvals: true, usage: true, replay: true, audit: true, rogue: true }));
+console.log(JSON.stringify({ ok: true, agents: agents.length, events_sampled: parsedEvents.events.length, oidc: true, team_isolation: true, approvals: true, usage: true, replay: true, audit: true, rogue: true, resume_pause_kill: true, stale_worker_guard: true }));
