@@ -1,4 +1,5 @@
-// acceptance probe: final containment acceptance
+// Explicit mutating acceptance only; never invoked by a build.
+if (process.env.RUN_MUTATING_ACCEPTANCE !== "1") throw new Error("Set RUN_MUTATING_ACCEPTANCE=1 only for an approved isolated acceptance run");
 const isVercel = process.env.VERCEL === "1";
 if (!isVercel) {
   console.log("vercel-acceptance: skipped outside Vercel");
@@ -8,8 +9,8 @@ if (!isVercel) {
 const token = process.env.VERCEL_OIDC_TOKEN;
 if (!token) throw new Error("vercel-acceptance: VERCEL_OIDC_TOKEN missing");
 
-const control = "https://br-gentle-butterfly-b57bd2r5-actctlp2.compute.c-7.us-east-2.aws.neon.tech";
-const events = "https://br-gentle-butterfly-b57bd2r5-actevtp2.compute.c-7.us-east-2.aws.neon.tech";
+const control = "https://br-gentle-butterfly-b57bd2r5-actctlp3.compute.c-7.us-east-2.aws.neon.tech";
+const events = "https://br-gentle-butterfly-b57bd2r5-actevtp3.compute.c-7.us-east-2.aws.neon.tech";
 const workspace = "ws_demo";
 const team = "team_operations";
 const auth = { authorization: `Bearer ${token}`, accept: "application/json" };
