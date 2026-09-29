@@ -1,0 +1,246 @@
+{
+  "project": "The Agent Control Tower",
+  "date_local": "2026-09-30",
+  "timezone": "Asia/Riyadh",
+  "checkpoint_only": true,
+  "submission_freeze": false,
+  "main_branch": "br-gentle-butterfly-b57bd2r5",
+  "backend_source": "eb8278d3bef08a1a30e8c20773a410edb0594ce1",
+  "backend": {
+    "control": {
+      "slug": "actctlp3",
+      "deployment": 1,
+      "sha256": "863da0f05d45f27db44f1f18c312f8931782ea00bbde142cc858a7dca4a3f1d5"
+    },
+    "events": {
+      "slug": "actevtp3",
+      "deployment": 1,
+      "sha256": "1f9459a4a352f8a5998aff1c20be7b317f13cd9e35586f2dab16629b18706b13"
+    }
+  },
+  "public_http_evidence": {
+    "github_run": 36642496915,
+    "github_job": 109657768917,
+    "responses": [
+      {
+        "url": "https://br-gentle-butterfly-b57bd2r5-actctlp3.compute.c-7.us-east-2.aws.neon.tech/health",
+        "status": 200,
+        "expected": 200
+      },
+      {
+        "url": "https://br-gentle-butterfly-b57bd2r5-actctlp3.compute.c-7.us-east-2.aws.neon.tech/fleet?workspace_id=ws_demo",
+        "status": 401,
+        "expected": 401
+      },
+      {
+        "url": "https://br-gentle-butterfly-b57bd2r5-actevtp3.compute.c-7.us-east-2.aws.neon.tech/health",
+        "status": 200,
+        "expected": 200
+      },
+      {
+        "url": "https://br-gentle-butterfly-b57bd2r5-actevtp3.compute.c-7.us-east-2.aws.neon.tech/token?workspace_id=ws_demo",
+        "status": 401,
+        "expected": 401
+      },
+      {
+        "url": "https://br-gentle-butterfly-b57bd2r5-actevtp3.compute.c-7.us-east-2.aws.neon.tech/stream?workspace_id=ws_demo",
+        "status": 401,
+        "expected": 401
+      }
+    ]
+  },
+  "vercel_oidc_evidence": {
+    "source": "d2aa0eb62fa6ef4a6707c7eb8cfab4d3681f5e64",
+    "deployment": "9ZkQxJ9K5As4DfMS7BFnspxxU2Ef",
+    "type": "successful Vercel build with mandatory read-only assertions",
+    "suite": "scripts/backend-smoke.mjs",
+    "direct_build_logs_accessible": false
+  },
+  "main_database_probes": [
+    {
+      "action": "preflight.kill_race.worker_end",
+      "target_id": "race_action_preflight_20260929b",
+      "result": "committed",
+      "payload_json": {
+        "at": "2026-09-29T22:54:10.782241+00:00"
+      },
+      "created_at": "2026-09-29T22:54:10.782Z"
+    },
+    {
+      "action": "preflight.kill_race.kill",
+      "target_id": "infra_preflight_20260929b",
+      "result": "committed",
+      "payload_json": {
+        "at": "2026-09-29T22:54:11.388754+00:00"
+      },
+      "created_at": "2026-09-29T22:54:11.388Z"
+    },
+    {
+      "action": "preflight.approval_binding",
+      "target_id": "exact",
+      "result": "accepted",
+      "payload_json": {
+        "database_error": null
+      },
+      "created_at": "2026-09-29T22:55:04.039Z"
+    },
+    {
+      "action": "preflight.approval_binding",
+      "target_id": "payload",
+      "result": "rejected",
+      "payload_json": {
+        "database_error": "insert or update on table \"tool_actions\" violates foreign key constraint \"tool_approval_exact_fk\""
+      },
+      "created_at": "2026-09-29T22:55:04.039Z"
+    },
+    {
+      "action": "preflight.approval_binding",
+      "target_id": "action",
+      "result": "rejected",
+      "payload_json": {
+        "database_error": "insert or update on table \"tool_actions\" violates foreign key constraint \"tool_approval_exact_fk\""
+      },
+      "created_at": "2026-09-29T22:55:04.039Z"
+    },
+    {
+      "action": "preflight.approval_binding",
+      "target_id": "risk",
+      "result": "rejected",
+      "payload_json": {
+        "database_error": "insert or update on table \"tool_actions\" violates foreign key constraint \"tool_approval_exact_fk\""
+      },
+      "created_at": "2026-09-29T22:55:04.039Z"
+    },
+    {
+      "action": "preflight.approval_binding",
+      "target_id": "scope",
+      "result": "rejected",
+      "payload_json": {
+        "database_error": "approval scope does not match tool action"
+      },
+      "created_at": "2026-09-29T22:55:04.039Z"
+    },
+    {
+      "action": "preflight.stale_worker",
+      "target_id": "stale_probe_preflight_20260929b",
+      "result": "rejected",
+      "payload_json": {
+        "database_error": "tool execution blocked by run state: killed"
+      },
+      "created_at": "2026-09-29T22:55:04.043Z"
+    },
+    {
+      "action": "preflight.authoritative_agent_epoch",
+      "target_id": "authoritative_epoch_probe_preflight_20260929b",
+      "result": "unexpected_allowed",
+      "payload_json": {
+        "run_epoch": 0,
+        "agent_epoch": 1,
+        "agent_state": "killed",
+        "worker_epoch": 0
+      },
+      "created_at": "2026-09-29T22:58:01.558Z"
+    }
+  ],
+  "migration_006": {
+    "applied_to_main": false,
+    "validation_branch": "br-square-dew-b57d7tcl",
+    "prepared_migration_error": "unterminated dollar-quoted string",
+    "validation": [
+      {
+        "evidence": [
+          {
+            "at": "2026-09-29T23:01:18.173959+00:00",
+            "action": "fence.authoritative_agent_epoch",
+            "result": "rejected",
+            "payload": {
+              "database_error": "tool execution blocked by agent state: killed"
+            }
+          },
+          {
+            "at": "2026-09-29T23:01:18.881652+00:00",
+            "action": "preflight.kill_race.kill",
+            "result": "committed",
+            "payload": {
+              "at": "2026-09-29T23:01:18.881645+00:00"
+            }
+          },
+          {
+            "at": "2026-09-29T23:01:20.273349+00:00",
+            "action": "preflight.approval_binding",
+            "result": "accepted",
+            "payload": {
+              "database_error": null
+            }
+          },
+          {
+            "at": "2026-09-29T23:01:20.273349+00:00",
+            "action": "preflight.approval_binding",
+            "result": "rejected",
+            "payload": {
+              "database_error": "insert or update on table \"tool_actions\" violates foreign key constraint \"tool_approval_exact_fk\""
+            }
+          },
+          {
+            "at": "2026-09-29T23:01:20.273349+00:00",
+            "action": "preflight.approval_binding",
+            "result": "rejected",
+            "payload": {
+              "database_error": "insert or update on table \"tool_actions\" violates foreign key constraint \"tool_approval_exact_fk\""
+            }
+          },
+          {
+            "at": "2026-09-29T23:01:20.273349+00:00",
+            "action": "preflight.approval_binding",
+            "result": "rejected",
+            "payload": {
+              "database_error": "insert or update on table \"tool_actions\" violates foreign key constraint \"tool_approval_exact_fk\""
+            }
+          },
+          {
+            "at": "2026-09-29T23:01:20.273349+00:00",
+            "action": "preflight.approval_binding",
+            "result": "rejected",
+            "payload": {
+              "database_error": "tool execution references missing agent"
+            }
+          },
+          {
+            "at": "2026-09-29T23:01:20.277623+00:00",
+            "action": "preflight.stale_worker",
+            "result": "rejected",
+            "payload": {
+              "database_error": "tool execution blocked by agent state: killed"
+            }
+          },
+          {
+            "at": "2026-09-29T23:02:58.860117+00:00",
+            "action": "fence.active_stale_epoch",
+            "result": "rejected",
+            "payload": {
+              "database_error": "tool execution blocked by authoritative control epoch: worker 0, agent 1"
+            }
+          }
+        ],
+        "triggers": [
+          {
+            "name": "tool_actions_execution_guard",
+            "definition": "CREATE TRIGGER tool_actions_execution_guard BEFORE INSERT OR UPDATE ON public.tool_actions FOR EACH ROW EXECUTE FUNCTION guard_tool_execution()"
+          },
+          {
+            "name": "tool_actions_authoritative_epoch_fence",
+            "definition": "CREATE TRIGGER tool_actions_authoritative_epoch_fence BEFORE INSERT OR UPDATE ON public.tool_actions FOR EACH ROW EXECUTE FUNCTION guard_authoritative_agent_epoch()"
+          }
+        ]
+      }
+    ]
+  },
+  "limitations": [
+    "Public browser UI and public live-demo URL not verified",
+    "Fresh complete normal/approval/rogue runtime acceptance not run",
+    "Initial connector race is not accepted as genuine overlapping concurrency",
+    "Current canonical scenario IDs require scoped fresh acceptance fixtures/selection",
+    "Vercel runtime URL overrides not inspected",
+    "Main authoritative agent epoch issue remains until approved migration application"
+  ]
+}

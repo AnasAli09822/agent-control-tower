@@ -1,31 +1,25 @@
-# Architecture
+# Architecture snapshot
 
-Agent Control Tower is a control plane between autonomous workers and consequential tools.
-
-```text
-Browser / Operator UI (Vercel / Next.js)
-   | short reads + commands                    | signed 120s SSE token
-   v                                           v
-Vercel scoped server proxy              Neon Function: actevents
-   | x-api-key stays server-only                 | persisted sequence replay
-   v                                             |
-Neon Function: actcontrol <----------------------+
-   |                                             |
-   +----------------------+----------------------+
-                          v
-                    Neon Postgres
-          agents / tasks / runs / events
-      approvals / reasoning / usage / audit
-                          |
-                  Tool Executor Guard
-                          |
-             CRM / Support / Infra simulators
+```mermaid
+flowchart TD
+ UI["Next.js operator UI — Vercel"] --> Proxy["Scoped server proxy — Vercel OIDC"]
+ Proxy --> Control["Neon control API — actctlp3"]
+ Proxy --> Token["Neon signed-token endpoint"]
+ Token --> UI
+ UI --> SSE["Direct SSE — actevtp3"]
+ Control --> DB["Neon Postgres"]
+ SSE --> DB
+ Control --> Guard["Tool execution guard"]
+ Guard --> DB
+ Guard --> Systems["CRM, Support, Infra simulators"]
 ```
 
-The database is authoritative for mutable control state and append-only evidence. Every guarded tool mutation re-checks run state, run↔agent/task scope, agent authority, `control_epoch`, risk decision, and any exact approval binding immediately before the simulated external-system write.
+The control plane contains the registry, command bus, policy/risk evaluation, approvals, drift detection, usage tracking, and audit. Durable state and append-only evidence live in Neon Postgres.
 
-`kill` increments the authoritative epoch. A worker holding the previous epoch is stale and must be denied before mutation. Stale-epoch rejection takes precedence over terminal-state reporting so the failure test proves worker invalidation, not merely UI state.
+Vercel forwards short-lived workload identity. Owner, project, environment, issuer, audience, expiry, and signature are verified in Neon. The internal handler key exists only inside the Neon control Function isolate. The event-signing secret is configured only on the Neon event Function; Vercel requests a signed 120-second token bound to the exact workspace/team.
 
-The public demo proxy is deliberately restricted to `ws_demo`, the two demo teams, the three demo agents, and `operator_demo`. The control API key is never exposed to the browser. SSE uses a short-lived HMAC token bound to workspace/team; reconnects mint a fresh token and pass `after_sequence` so persisted events resume without a gap.
+The public proxy remains constrained to `ws_demo`, `team_operations`, `team_revenue`, the three demo agents, and `operator_demo`. Stream replay uses persisted per-workspace sequences and supports Last-Event-ID, after_sequence, reconnect, and heartbeat.
 
-Reasoning replay stores structured operational summaries and evidence references. Raw hidden chain-of-thought is not stored or exposed.
+Migration 005 enforces the exact run/task/agent/team/workspace and approval/action/payload/risk binding through deferred composite foreign keys. Migration 006 adds a fence that locks and checks the authoritative agent and run until the mutation transaction commits. **006 is tested on isolated branch `br-square-dew-b57d7tcl` and has not been applied to main.** Phase 10 cannot freeze before that gate and fresh end-to-end acceptance pass.
+
+Reasoning replay contains structured operational summaries and evidence references. Hidden chain-of-thought is neither stored nor exposed. All external business systems and metered agent outputs in this demo are simulated.

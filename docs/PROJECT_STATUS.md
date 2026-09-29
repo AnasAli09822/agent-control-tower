@@ -1,34 +1,39 @@
 # Project status — Agent Control Tower
 
-Status date: 2026-09-22.
+Status date: 2026-09-30 (Asia/Riyadh). **Phase 9 remains open. Phase 10 is not frozen.**
 
-| Phase | Status | Evidence / remaining gate |
+| Phase | Current status | Evidence / remaining gate |
 |---|---|---|
-| 0 — Plan / Context Lock | complete | canonical master plan, context lock, and decision log established |
-| 1 — Data / Control Model | complete + recovered | 30-table schema, constraints, indexes, seed, transition rules; clean bootstrap validated |
-| 2 — Execution Guard | complete + main hardened | pause/resume/kill, exact approval binding, control-epoch invalidation, append-only audit; migration 005 tested and applied to main |
-| 3 — Three agents | implemented | Sales, Support, and Infra simulator evidence exists; deterministic source recovered |
-| 4 — Live Event System | live baseline exists; hardened source validated | persisted workspace sequences and reconnect logic exist; signed workspace/team-scoped SSE source passes security tests but has not replaced the older main Function deployment |
-| 5 — Operator UI | source complete + production build verified | fleet, events, approvals, controls, replay, token/cost visibility, CSV/JSON export; GitHub Actions production `next build` passes |
-| 6 — Rogue Scenario | backend acceptance evidence complete; recovered source implemented | critical drift → auto-pause → kill → stale-worker epoch rejection demonstrated |
-| 7 — Multi-team + Export | complete in source/control model | Operations/Revenue scoping, cross-team composite constraints, team-filtered views, and audit export are implemented; prior adversarial scope-substitution probes were rejected |
-| 8 — Adversarial Audit | complete for database/control invariants | payload/action/risk/scope/unapproved/stale attacks rejected; migration 005 applied to main and post-apply integrity is clean; GitHub source validation remains green |
-| 9 — Public Backend + Vercel + GitHub + CI | partial | public GitHub repo and CI are live; Vercel builds the repository successfully under `alhajans664-2649s-projects`; hardened Neon Function source is validated, but main still runs the preserved older Function deployments and the Vercel deployment is protected from anonymous external acceptance |
-| 10 — Submission Freeze | pending | freeze only after hardened backend deployment, public Vercel access, and fresh external acceptance all pass |
+| 0 — Plan/context | established | Standalone repository and approved architecture retained |
+| 1 — Data/control | retained | Main still has 001, 002, 003, 005; no migration rerun |
+| 2 — Execution guard | new hardening gate | Exact approval binding passes fresh DB probes; authoritative-agent epoch fence 006 is validated on an isolated main clone but pending on main |
+| 3 — Agents | source retained | Existing three simulated agents; fresh complete scenario acceptance pending |
+| 4 — Events/reconnect | backend contract verified | New signed SSE Function; OIDC/token/scope/Last-Event-ID checks pass during Vercel build; browser reconnect verification pending |
+| 5 — Operator UI | source/build passes | UI retained; anonymous end-to-end verification pending |
+| 6 — Rogue/kill | main regression found | Killed current run rejects stale worker, but an outstanding old run can bypass the main agent epoch; 006 closes the tested case on validation only |
+| 7 — Teams/export | source retained | Team queries and scoped audit export; final browser acceptance pending |
+| 8 — Adversarial audit | refreshed, not closed | Payload/action/risk/scope substitutions rejected; newly discovered authoritative-epoch case must be closed on main |
+| 9 — Public backend/Vercel/acceptance | partial | New Neon slugs work; Vercel OIDC smoke passes; source defaults now target new slugs; runtime overrides/public URL need verification |
+| 10 — Submission freeze | pending | Requires applied fence, fresh normal/approval/rogue acceptance, concurrency tests, and UI/public URL verification |
 
-## Current verified external state
+## Verified deployments
 
-- GitHub repository: `AnasAli09822/agent-control-tower` (public).
-- GitHub source/build validation is green through dependency install, `validate:source`, and production `next build`.
-- Neon main migration `005_declarative_execution_binding`: applied and verified; zero run-scope and approval-binding mismatches after apply.
-- Main Neon Functions `actcontrol`, `actevents`, and `actaccept` remain the preserved older deployments. The recovered hardened source requires an API key for control routes and signed, workspace/team-scoped stream tokens for SSE.
-- Vercel is connected to the GitHub repository and reports successful deployments under scope `alhajans664-2649s-projects`.
-- The project-specific Vercel deployment is protected by Vercel Authentication, so anonymous external acceptance is not yet possible.
-- `https://agent-control-tower.vercel.app` currently resolves to a different/default “Create Next App” deployment and is not the acceptance URL for this project.
+- Repository: https://github.com/AnasAli09822/agent-control-tower
+- Main control Function: `actctlp3`, deployment 1, completed and invoked successfully.
+- Main event Function: `actevtp3`, deployment 1, completed and invoked successfully.
+- Control bundle SHA-256: `863da0f05d45f27db44f1f18c312f8931782ea00bbde142cc858a7dca4a3f1d5`.
+- Event bundle SHA-256: `1f9459a4a352f8a5998aff1c20be7b317f13cd9e35586f2dab16629b18706b13`.
+- Deployed bundle source: `eb8278d3bef08a1a30e8c20773a410edb0594ce1`.
+- Packaging run `36642496915`: actual public HTTP tests pass (200 health, 401 anonymous fleet/token/stream).
+- Vercel deployment `9ZkQxJ9K5As4DfMS7BFnspxxU2Ef` on `d2aa0eb62fa6ef4a6707c7eb8cfab4d3681f5e64` succeeds with read-only backend assertions for OIDC fleet, signed event scope, tampered token denial, and SSE Last-Event-ID.
+- Existing production slugs were preserved. GitHub Actions uses no deployment secrets.
 
-## Remaining gates
+## Current blocking gates
 
-1. Deploy the hardened `actcontrol` and `actevents` source to the Neon validation branch, verify health/auth/SSE behavior, then promote the same hardened source to main.
-2. Configure the Vercel project to use the hardened Neon Function URLs and matching server-side secrets, and expose an unprotected production acceptance URL.
-3. Run fresh external acceptance covering fleet, approvals, pause/resume/kill, signed SSE reconnect, usage/replay/export, team isolation, and the rogue stale-worker rejection path.
-4. Freeze Phase 10 artifacts only after those external checks pass.
+1. Apply reviewed migration 006 to main. Neon's prepared-migration helper cannot parse the dollar-quoted function body; the exact statements were instead tested atomically on isolated branch `epoch-fence-validation-20260929` (`br-square-dew-b57d7tcl`). Main schema has not been changed.
+2. Vercel management connection returns 403 for the correct scope `alhajans664-2649s-projects`. GitHub confirms deployment success; the 403 does not imply an unlinked project. Browser fallback requires user approval.
+3. Inspect Vercel runtime URL overrides, verify the project-specific public URL, and execute UI controls and fresh isolated scenario acceptance.
+4. Prove actual overlapping kill-race/concurrent pause-kill ordering. The initial connector probe completed its worker before the kill; it is not treated as proof of an overlapping race.
+5. The current scenario source references canonical demo task/system IDs; a fresh acceptance workspace needs explicit isolated fixtures and scoped scenario selection before it can substitute for full demo acceptance.
+
+Existing architecture, thesis, 90-second script, and failure-test descriptions are preparation material. No recording or final accepted live-demo URL is claimed.

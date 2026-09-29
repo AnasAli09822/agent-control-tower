@@ -62,4 +62,41 @@ try {
   controller.abort();
   await reader.cancel().catch(() => {});
 }
+
+for (const [team, count] of [["team_operations",2],["team_revenue",1]]) {
+  const scoped = await (await request("fleet team isolation " + team, `${control}/fleet?workspace_id=ws_demo&team_id=${team}`, 200, { headers: auth })).json();
+  if (scoped.agents.length !== count || scoped.agents.some(a => a.team_id !== team)) throw new Error("backend-smoke: fleet team isolation");
+}
+const approvals = await (await request("approval query", `${control}/approvals?workspace_id=ws_demo`, 200, { headers: auth })).json();
+if (!Array.isArray(approvals.approvals)) throw new Error("backend-smoke: approval query contract");
+const usage = await (await request("usage aggregation query", `${control}/usage?workspace_id=ws_demo`, 200, { headers: auth })).json();
+if (usage.total_tokens == null || usage.total_cost_usd == null) throw new Error("backend-smoke: usage query contract");
+const run = fleet.agents.find(a => a.current_run_id)?.current_run_id;
+if (!run) throw new Error("backend-smoke: structured replay run missing");
+const replay = await (await request("structured replay query", `${control}/replay/${encodeURIComponent(run)}?workspace_id=ws_demo&limit=10`, 200, { headers: auth })).json();
+if (!Array.isArray(replay.steps) || replay.steps.some(s => "chain_of_thought" in s)) throw new Error("backend-smoke: structured replay contract");
+const audit = await (await request("audit JSON export", `${control}/audit/export?workspace_id=ws_demo&limit=20`, 200, { headers: auth })).json();
+if (!Array.isArray(audit.audit)) throw new Error("backend-smoke: audit export contract");
+const csv = await request("audit CSV export", `${control}/audit/export?workspace_id=ws_demo&format=csv&limit=20`, 200, { headers: auth });
+if (!csv.headers.get("content-type")?.includes("text/csv")) throw new Error("backend-smoke: CSV content type");
+await request("token workspace scope rejected", `${events}/token?workspace_id=ws_other`, 403, { headers: auth });
+await request("token team scope rejected", `${events}/token?workspace_id=ws_demo&team_id=team_other`, 403, { headers: auth });
+const heartbeatController = new AbortController();
+const heartbeatUrl = eventUrl("stream");
+heartbeatUrl.searchParams.set("after_sequence", "999999999999");
+const heartbeatStream = await fetch(heartbeatUrl, { signal: heartbeatController.signal });
+const heartbeatReader = heartbeatStream.body.getReader();
+const heartbeatTimeout = setTimeout(() => heartbeatController.abort(), 15000);
+let heartbeatText = "";
+try {
+  while (!heartbeatText.includes(": heartbeat")) {
+    const chunk = await heartbeatReader.read();
+    if (chunk.done) throw new Error("backend-smoke: heartbeat stream closed");
+    heartbeatText += decoder.decode(chunk.value, { stream: true });
+  }
+  evidence.push({ test: "SSE heartbeat on idle stream", status: heartbeatStream.status });
+} finally {
+  clearTimeout(heartbeatTimeout); heartbeatController.abort(); await heartbeatReader.cancel().catch(() => {});
+}
+
 console.log(JSON.stringify({ suite: "read-only-backend-smoke", ok: true, agents: fleet.agents.length, evidence }));

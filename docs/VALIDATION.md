@@ -100,3 +100,45 @@ After applying migration 005 through Neon's prepared-migration workflow, main wa
 - approval-binding mismatches for executing/succeeded actions: `0`.
 
 Migration 004 remains validation-only; migration 005 is the main-safe declarative enforcement path and does not depend on 004 being present.
+
+## Fresh verification — 2026-09-30
+
+The previous sections describe historical gates. They do not establish final readiness of the current deployment.
+
+### New backend and identity evidence
+
+- New main slugs `actctlp3` and `actevtp3` completed deployment and passed actual invocation tests.
+- GitHub packaging run `36642496915`, job `109657768917`: both health endpoints 200; anonymous fleet, token, and stream endpoints 401.
+- Vercel deployment `9ZkQxJ9K5As4DfMS7BFnspxxU2Ef` succeeded on commit `d2aa0eb62fa6ef4a6707c7eb8cfab4d3681f5e64`. Its mandatory read-only postbuild suite asserts authorized OIDC fleet/DB access, exact signed-token scope, tampered-token rejection, persisted event ordering, SSE Content-Type, and Last-Event-ID.
+- The unsafe prior postbuild scenario/kill mutations were removed. Build-time checks now read only.
+- OIDC tests were expanded to verify actual RSA signatures and invalid issuer/audience/expiry/signature rejection, in addition to exact owner/project/environment subjects.
+
+### Fresh main database probes
+
+Workspace: `ws_preflight_20260929b`. This is a guard fixture, **not** a completed normal/approval/rogue runtime acceptance workspace.
+
+| Probe | Main observation |
+|---|---|
+| exact approved action | accepted |
+| payload substitution | rejected by `tool_approval_exact_fk` |
+| action substitution | rejected by `tool_approval_exact_fk` |
+| risk substitution | rejected by `tool_approval_exact_fk` |
+| scope substitution | rejected |
+| killed current run / old worker epoch | rejected |
+| killed agent / outstanding old running run / matching old run epoch | **unexpectedly accepted** |
+
+The last probe constructs an outstanding run context for a killed agent. It demonstrates that main's old guard uses the run epoch without checking the authoritative agent epoch. It does not claim that this context was created by an actual deployed worker.
+
+### Migration 006 — isolated validation only
+
+Branch: `br-square-dew-b57d7tcl`, cloned from main. Migration 006 was applied in one transaction there.
+
+- Killed agent with outstanding old run: rejected by authoritative agent state.
+- Active agent at epoch 1 with worker/run epoch 0: rejected by authoritative epoch.
+- Exact approved execution remains accepted.
+- Payload/action/risk/scope substitution remains rejected.
+- Post-kill stale worker remains rejected.
+- The fence locks the agent before the run with FOR SHARE until transaction end, matching operator lock ordering at the fence boundary.
+- No migrations were rerun on main. 006 remains unapplied there.
+
+The initial two-request connector race had worker evidence before kill evidence; it is not accepted as a genuine overlapping concurrency test. Fresh external normal/approval/rogue acceptance, actual overlapping races, UI interaction, anonymous URL checks, and Phase 10 freeze remain pending.

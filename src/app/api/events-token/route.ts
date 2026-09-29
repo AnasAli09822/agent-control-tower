@@ -1,7 +1,7 @@
 import { getVercelOidcToken } from "@vercel/oidc";
 import { NextRequest } from "next/server";
 
-const eventsBase = process.env.EVENTS_API_URL ?? "https://br-gentle-butterfly-b57bd2r5-actevtp2.compute.c-7.us-east-2.aws.neon.tech/";
+const eventsBase = process.env.EVENTS_API_URL ?? "https://br-gentle-butterfly-b57bd2r5-actevtp3.compute.c-7.us-east-2.aws.neon.tech/";
 const demoWorkspaceId = process.env.DEMO_WORKSPACE_ID ?? "ws_demo";
 const allowedTeams = new Set(["team_operations", "team_revenue"]);
 

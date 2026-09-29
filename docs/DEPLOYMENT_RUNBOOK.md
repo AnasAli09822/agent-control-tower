@@ -1,74 +1,30 @@
-# Production deployment runbook
+# Deployment and acceptance runbook
 
-This runbook is the controlled handoff from validated source to public production. Do not paste secret values into issues, commits, chat, or logs.
+Repository: `AnasAli09822/agent-control-tower`. Vercel scope: `alhajans664-2649s-projects`. Neon project: `weathered-poetry-97205616`.
 
-## 1. GitHub Actions secrets
+## Current main Functions
 
-Repository: `AnasAli09822/agent-control-tower`
+- `actctlp3`: control API; health public, all control traffic requires verified Vercel OIDC. The internal handler key is generated inside Neon.
+- `actevtp3`: signed SSE; health public, /token requires verified Vercel OIDC and demo scope, /events and /stream require exact-scope signed tokens.
+- Configure `EVENT_STREAM_SECRET` only on the Neon event Function. Owner/project/environment restrictions are configured there as appropriate.
+- Do not place internal keys in Vercel, GitHub Actions, source, or browser output. Do not use the preserved old production slugs.
 
-Create these repository Actions secrets:
+## Vercel
 
-- `NEON_API_KEY` — Neon API key with access to project `weathered-poetry-97205616`.
-- `CONTROL_API_KEY` — a new cryptographically random secret (at least 32 random bytes).
-- `EVENT_STREAM_SECRET` — a different cryptographically random secret (at least 32 random bytes).
+Source defaults target the new slugs. Check any runtime `CONTROL_API_URL` and `EVENTS_API_URL` overrides before accepting the UI deployment. Production and preview authenticate with Vercel workload OIDC; no long-lived control or stream secret is needed on Vercel.
 
-`CONTROL_API_KEY` and `EVENT_STREAM_SECRET` must also be set to the exact same values in the Vercel project. Never prefix either with `NEXT_PUBLIC_`.
+`npm run build` includes a read-only deployed-backend smoke suite on Vercel. It must never start scenarios, issue credits, approve actions, or kill agents. GitHub validation builds skip this environment-specific smoke. GitHub Actions is limited to validation/packaging and public HTTP tests, without deployment secrets.
 
-## 2. Controlled Neon deployment
+The Vercel management connection currently lacks this scope (403). GitHub deployment metadata confirms integration and successful builds. Do not relink or create another project as a reaction to that 403.
 
-Workflow: `.github/workflows/deploy-neon.yml`.
+## Epoch fence gate
 
-The workflow can be run manually or by controlled deployment branches:
+Review `db/migrations/006_authoritative_epoch_fence.sql` and the isolated validation evidence before applying to main. The prepared-migration tool fails on the dollar-quoted body; individual complete statements passed atomically through run_sql_transaction on validation branch `br-square-dew-b57d7tcl`. Production application is pending explicit approval. Do not rerun 001–005.
 
-- `neon-validation` -> validation branch `br-little-art-b5e06cd8`
-- `neon-production` -> production branch `br-gentle-butterfly-b57bd2r5`
+## Fresh acceptance and freeze
 
-Always deploy validation first. Verify:
+Use isolated fixtures for fresh normal, approval, rogue, scope, and concurrency tests. The existing scenario source uses canonical demo IDs, so explicitly resolve this fixture/selection requirement without weakening the public demo scope.
 
-1. `/health` is available.
-2. `/fleet` without `x-api-key` is rejected.
-3. `/events` and `/stream` without a valid signed token are rejected.
-4. Valid exact-scope signed token works.
-5. Wrong-scope, tampered, and expired tokens fail.
-6. Start All, approval, pause/resume/kill, Rogue Scenario, replay, usage and audit export work.
-7. Kill stale-worker probe is denied before any mutation.
+Verify the actual public project URL, UI controls, approvals, usage/replay, audit JSON/CSV, team filtering, live reconnect, heartbeat, persistent monotonic sequence, kill commit, rejected stale action, and zero post-kill business mutations. Record the accepted source SHA and deployment before freezing.
 
-Only then trigger `neon-production` using the same source commit and secrets.
-
-## 3. Vercel project
-
-Project: `agent-control-tower`
-Expected account/scope: `alhajans664-2649s-projects`.
-
-Set these server-side environment variables for Production (and Preview if preview acceptance is desired):
-
-- `CONTROL_API_URL=https://br-gentle-butterfly-b57bd2r5-actcontrol.compute.c-7.us-east-2.aws.neon.tech/`
-- `CONTROL_API_KEY=<same value as GitHub Actions secret>`
-- `EVENTS_API_URL=https://br-gentle-butterfly-b57bd2r5-actevents.compute.c-7.us-east-2.aws.neon.tech/`
-- `EVENT_STREAM_SECRET=<same value as GitHub Actions secret>`
-- `DEMO_WORKSPACE_ID=ws_demo`
-- `DEMO_OPERATOR_ID=operator_demo`
-
-Redeploy after changing environment variables.
-
-## 4. Public production acceptance
-
-The final production URL must be reachable anonymously. Disable Vercel Authentication for the production deployment before final acceptance. Preview deployments may remain protected.
-
-Verify externally without account cookies:
-
-- title is `Agent Control Tower`
-- Fleet loads the three demo agents
-- live event stream reconnects and resumes from the last sequence
-- approvals can be approved/rejected
-- pause/resume/kill controls work
-- token/cost totals are visible
-- structured replay is visible
-- audit CSV/JSON exports work
-- Rogue Scenario auto-pauses on critical drift, kill increments control epoch, and stale worker mutation is denied
-- direct anonymous Neon control/event reads are rejected except health endpoints
-- no runtime 5xx errors are present
-
-## 5. Freeze
-
-After external acceptance, record the accepted Git commit SHA and deployment URL in `docs/PROJECT_STATUS.md` and `docs/SUBMISSION_NOTES.md`, rebuild the source archive, compute its SHA-256, and make no further code changes without re-running acceptance.
+The current checkpoint is not the final submission freeze and does not claim a recorded walkthrough or accepted live-demo URL.
