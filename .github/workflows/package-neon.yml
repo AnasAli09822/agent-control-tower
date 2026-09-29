@@ -22,6 +22,9 @@ jobs:
           node-version: 22
       - run: npm install
       - run: npm run validate:source
+      - name: Check new production routing and anonymous denial
+        run: |
+          node --input-type=module -e 'for (const [url, expected] of [["https://br-gentle-butterfly-b57bd2r5-actctlp3.compute.c-7.us-east-2.aws.neon.tech/health",200],["https://br-gentle-butterfly-b57bd2r5-actctlp3.compute.c-7.us-east-2.aws.neon.tech/fleet?workspace_id=ws_demo",401],["https://br-gentle-butterfly-b57bd2r5-actevtp3.compute.c-7.us-east-2.aws.neon.tech/health",200],["https://br-gentle-butterfly-b57bd2r5-actevtp3.compute.c-7.us-east-2.aws.neon.tech/token?workspace_id=ws_demo",401],["https://br-gentle-butterfly-b57bd2r5-actevtp3.compute.c-7.us-east-2.aws.neon.tech/stream?workspace_id=ws_demo",401]]) { const response = await fetch(url, {signal:AbortSignal.timeout(20000)}); console.log(JSON.stringify({url,status:response.status,expected})); if(response.status!==expected) throw new Error("public backend HTTP contract failed"); }'
       - name: Bundle Neon Functions
         run: |
           set -euo pipefail

@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "node scripts/backend-smoke.mjs",
     "start": "next start",
     "acceptance:external": "node scripts/vercel-acceptance.mjs",
     "typecheck:core": "tsc -p tsconfig.core.json --noEmit",
