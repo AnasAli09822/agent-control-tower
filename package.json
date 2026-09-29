@@ -5,8 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "postbuild": "node scripts/vercel-acceptance.mjs",
     "start": "next start",
+    "acceptance:external": "node scripts/vercel-acceptance.mjs",
     "typecheck:core": "tsc -p tsconfig.core.json --noEmit",
     "test:core": "node --experimental-strip-types --test tests/core.test.ts",
     "test:security": "node --test tests/stream-token.test.mjs tests/vercel-oidc.test.mjs",

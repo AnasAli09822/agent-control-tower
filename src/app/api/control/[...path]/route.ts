@@ -2,7 +2,6 @@ import { getVercelOidcToken } from "@vercel/oidc";
 import { NextRequest } from "next/server";
 
 const controlBase = process.env.CONTROL_API_URL ?? "https://br-gentle-butterfly-b57bd2r5-actctlp2.compute.c-7.us-east-2.aws.neon.tech/";
-const apiKey = process.env.CONTROL_API_KEY;
 const demoWorkspaceId = process.env.DEMO_WORKSPACE_ID ?? "ws_demo";
 const demoOperatorId = process.env.DEMO_OPERATOR_ID ?? "operator_demo";
 const allowedTeams = new Set(["team_operations", "team_revenue"]);
@@ -69,7 +68,6 @@ async function proxy(request: NextRequest, context: { params: Promise<{ path: st
     const headers = new Headers();
     const oidcToken = await getVercelOidcToken();
     if (oidcToken) headers.set("authorization", `Bearer ${oidcToken}`);
-    else if (apiKey) headers.set("x-api-key", apiKey);
     else return Response.json({ error: "control_proxy_identity_unavailable" }, { status: 503 });
     headers.set("x-correlation-id", request.headers.get("x-correlation-id") ?? crypto.randomUUID());
     const idem = request.headers.get("idempotency-key");

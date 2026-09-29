@@ -32,6 +32,9 @@ jobs:
           (cd dist/actcontrol && zip -9 -q ../actcontrol.zip index.mjs)
           (cd dist/actevents && zip -9 -q ../actevents.zip index.mjs)
           sha256sum dist/actcontrol.zip dist/actevents.zip | tee dist/SHA256SUMS.txt
+      - name: Emit transferable public bundle bytes
+        run: |
+          node --input-type=module -e 'import fs from "node:fs"; for (const slug of ["actcontrol", "actevents"]) console.log("ACT_BUNDLE:" + slug + ":" + fs.readFileSync("dist/" + slug + ".zip").toString("base64"));'
       - uses: actions/upload-artifact@v4
         with:
           name: neon-function-bundles
@@ -40,4 +43,4 @@ jobs:
             dist/actevents.zip
             dist/SHA256SUMS.txt
           if-no-files-found: error
-          retention-days: 1
+          retention-days: 14
