@@ -233,7 +233,7 @@ async function intervene(request, url, agentId, commandName) {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (message.startsWith("stale_worker_guard_failed")) throw error;
-      if (!message.includes("stale control epoch") && !message.includes("tool execution blocked by run state: killed")) throw new Error(`stale_worker_guard_failed:${message}`);
+      if (error.code !== "55000" || !/tool execution blocked by (?:stale control epoch|authoritative control epoch|run state: killed|agent state: killed)/.test(message)) throw new Error(`stale_worker_guard_failed:${message}`);
       blockedReason = message;
     }
     const staleActionId = await withTx((client) => recordStaleWorkerDenial(client, { ...outcome.staleContext, correlationId: corr }));
@@ -251,6 +251,10 @@ async function decideApproval(request, approvalId, decision) {
   if (!workspaceId || !teamId || !operatorId) throw new Error("bad_request:workspace_team_operator_required");
   const corr = correlationId(request);
   return withTx(async (client) => {
+    // Match worker and intervention lock order: authoritative agent first.
+    const identity = await client.query(`select agent_id from approvals where workspace_id=$1 and team_id=$2 and id=$3`, [workspaceId, teamId, approvalId]);
+    if (!identity.rowCount) throw new Error("not_found:approval");
+    await client.query(`select id from agents where workspace_id=$1 and team_id=$2 and id=$3 for update`, [workspaceId, teamId, identity.rows[0].agent_id]);
     const result = await client.query(`select * from approvals where workspace_id=$1 and team_id=$2 and id=$3 for update`, [workspaceId, teamId, approvalId]);
     if (!result.rowCount) throw new Error("not_found:approval");
     const approval = result.rows[0];

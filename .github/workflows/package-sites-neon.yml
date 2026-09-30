@@ -18,15 +18,15 @@ jobs:
       - name: Bundle Sites-specific Neon services
         run: |
           set -euo pipefail
-          for name in actcontrol-sites actevents-sites; do
+          for name in actcontrol-sites actevents-sites actacceptance; do
             npx --yes @vercel/ncc@0.38.4 build functions/$name/index.mjs -m -o dist/$name
             node --check dist/$name/index.mjs
             (cd dist/$name && zip -9 -q ../$name.zip index.mjs)
           done
-          sha256sum dist/*sites.zip
+          sha256sum dist/*.zip
       - name: Emit transferable public bundle bytes
         run: |
-          node --input-type=module -e 'import fs from "node:fs"; for (const name of ["actcontrol-sites","actevents-sites"]) console.log("ACT_SITES_BUNDLE:" + name + ":" + fs.readFileSync("dist/"+name+".zip").toString("base64"));'
+          node --input-type=module -e 'import fs from "node:fs"; for (const name of ["actcontrol-sites","actevents-sites","actacceptance"]) console.log("ACT_SITES_BUNDLE:" + name + ":" + fs.readFileSync("dist/"+name+".zip").toString("base64"));'
       - uses: actions/upload-artifact@v4
         with:
           name: sites-neon-function-bundles

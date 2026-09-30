@@ -1,4 +1,4 @@
--- Pending production application. Tested on br-square-dew-b57d7tcl.
+-- Applied to main on 2026-09-30 after explicit user approval.
 BEGIN;
 CREATE OR REPLACE FUNCTION guard_authoritative_agent_epoch()
 RETURNS trigger LANGUAGE plpgsql AS $fence$
