@@ -112,7 +112,9 @@ export function OperatorDashboard() {
         ...body,
       });
       await refresh();
-      setNotice(label ?? null);
+      setNotice(path === "/scenarios/start-all" && result.idempotent === true
+        ? "Existing demo runs loaded. No new run was started."
+        : label ?? null);
       setError(null);
       return result;
     } catch (cause) {
@@ -165,8 +167,8 @@ export function OperatorDashboard() {
         <Metric label="Active agents" value={String(agents.filter((agent) => ["running", "waiting_approval", "paused"].includes(agent.current_status)).length)} />
         <Metric label="Pending approvals" value={String(approvals.length)} />
         <Metric label="Critical drift" value={String(critical)} />
-        <Metric label="Tokens" value={Number(usage.total_tokens ?? 0).toLocaleString()} />
-        <Metric label="Tracked cost" value={`$${Number(usage.total_cost_usd ?? 0).toFixed(4)}`} />
+        <Metric label="Simulated tokens" value={Number(usage.total_tokens ?? 0).toLocaleString()} />
+        <Metric label="Simulated cost" value={`$${Number(usage.total_cost_usd ?? 0).toFixed(4)}`} />
       </section>
 
       {notice && <div className="notice">{notice}</div>}
