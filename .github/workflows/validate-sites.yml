@@ -1,0 +1,24 @@
+name: validate-sites
+on:
+  push:
+    branches: [sites-migration]
+    paths: ['sites/**', '.github/workflows/validate-sites.yml']
+permissions:
+  contents: read
+jobs:
+  worker:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sites
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: node node_modules/typescript/bin/tsc --noEmit
+      - run: npm run build
+      - name: Check Worker and browser-secret boundary
+        run: |
+          node --input-type=module -e 'import fs from "node:fs"; if(!fs.existsSync("dist/server/index.js")) throw Error("Worker missing"); const scripts=fs.readdirSync("dist/client",{recursive:true}).filter(p=>p.endsWith(".js")); if(!scripts.length) throw Error("Browser scripts missing"); for (const p of scripts){const text=fs.readFileSync("dist/client/"+p,"utf8"); for(const name of ["ACT_WORKLOAD_SECRET","EVENT_STREAM_SECRET","signSitesWorkload"]) if(text.includes(name)) throw Error("Server secret in client bundle");} console.log("Worker output and browser-secret boundary passed");'

@@ -1,0 +1,164 @@
+{
+  "date": "2026-09-30",
+  "project": "Agent Control Tower",
+  "site_project_id": "appgprj_6abc486150bc8191a53c0204525ce08d",
+  "url": "https://agent-control-tower.tadafuqai.chatgpt.site",
+  "initial_deployment": {
+    "id": "appgdep_6abd6e9c4d5081919af9ba7cd4cfd09d",
+    "project_id": "appgprj_6abc486150bc8191a53c0204525ce08d",
+    "title": "Agent Control Tower",
+    "version_id": "appgprj_6abc486150bc8191a53c0204525ce08d~appgver_622ef68640a08191b36d4686b3b4a953",
+    "type": "publish",
+    "status": "succeeded",
+    "url": "https://agent-control-tower.tadafuqai.chatgpt.site",
+    "has_mcp": false,
+    "screenshot_asset_pointer": null,
+    "provider_deployment_id": "site---6abc486150bc8191a53c0204525ce08d",
+    "failure_message": null,
+    "env_set_revision": 1,
+    "updated_at": "2026-09-30T20:18:57.452762+00:00"
+  },
+  "site_source_commit": "0478a333fcaaa199660304f5128ccd6f767ec952",
+  "neon_bundle_source_commit": "98640bb4c25567756a2e07ca2b746eafa836ecd8",
+  "neon_services": {
+    "control": {
+      "slug": "actctlsites",
+      "deployment": 1,
+      "zip_sha256": "e11f21713947b58ada7635f7e744d7f6636f950ece333b9e204b62c083c8801f"
+    },
+    "events": {
+      "slug": "actevtsites",
+      "deployment": 1,
+      "zip_sha256": "a6806845ea03c0f3ce0d04f738d8998708edafb65248b62f7f600621989b2ace"
+    }
+  },
+  "verification": {
+    "status": 200,
+    "result": {
+      "passed": true,
+      "workspace": "ws_demo",
+      "checked_at": "2026-09-30T20:19:59.896Z",
+      "checks": [
+        {
+          "name": "anonymous_backend_denied",
+          "passed": true
+        },
+        {
+          "name": "signed_fleet_from_postgres",
+          "passed": true
+        },
+        {
+          "name": "team_scope_team_operations",
+          "passed": true
+        },
+        {
+          "name": "team_scope_team_revenue",
+          "passed": true
+        },
+        {
+          "name": "approvals_query",
+          "passed": true
+        },
+        {
+          "name": "usage_query",
+          "passed": true
+        },
+        {
+          "name": "audit_json",
+          "passed": true
+        },
+        {
+          "name": "audit_csv",
+          "passed": true
+        },
+        {
+          "name": "structured_replay",
+          "passed": true
+        },
+        {
+          "name": "signed_sse_token_issued",
+          "passed": true
+        },
+        {
+          "name": "sse_other_workspace_denied",
+          "passed": true
+        },
+        {
+          "name": "sse_other_team_denied",
+          "passed": true
+        },
+        {
+          "name": "sse_tampered_token_denied",
+          "passed": true
+        },
+        {
+          "name": "sse_content_type",
+          "passed": true
+        },
+        {
+          "name": "sse_idle_heartbeat",
+          "passed": true
+        }
+      ]
+    }
+  },
+  "source_validation": {
+    "named_test_cases": 21,
+    "typecheck": "passed",
+    "vinext_workers_build": "passed",
+    "browser_scripts_scanned": 14,
+    "secrets_in_browser_bundle": false
+  },
+  "remaining_gates": [
+    "Main database migration 006 requires explicit approval; its isolated-branch tests passed.",
+    "Fresh normal/approval/rogue scenarios and truly overlapping kill-vs-write acceptance remain pending.",
+    "The final walkthrough/submission freeze is not complete."
+  ],
+  "browser_verification": {
+    "status": "completed",
+    "streamingUrl": "https://ip-52-53-221-92.tetra-data.production.tinyfish.io/tf-47454ed1-74fa-44df-b9c8-3cca1a75934d/stream/0",
+    "result": {
+      "passed": true,
+      "limitations": [
+        "The live dashboard state dynamically updates, so agent counts visible at the moment of filtering may vary slightly based on real-time status changes (e.g., Active agents toggles between 1 and 2 as agents transition).",
+        "Exact token/cost values fluctuate with live events."
+      ],
+      "observations": [
+        "Dashboard loaded successfully without any errors.",
+        "Three agents are available in the system: Infrastructure Ops (idle, infra_ops), Support Ops (waiting_approval, support_ops), and Sales Ops (waiting_approval, sales_ops).",
+        "Live connection/SSE state is confirmed active (Live indicator illuminated).",
+        "Approval queue is functional and displays pending items (e.g., billing.issue_credit risk 76.00, crm.propose_discount risk 72.00).",
+        "Usage totals are visible: 2 active agents, 2 pending approvals, 0 critical drift, 14,680 tokens, $0.0490 tracked cost.",
+        "Team filter works correctly: selecting Operations shows 2 agents (Infrastructure Ops, Support Ops), selecting Revenue shows 1 agent (Sales Ops), and All teams restores all 3 agents.",
+        "Replay button opens a structured reasoning replay with 7 distinct steps (approval.requested, usage.recorded, reasoning.step, tool.completed, etc.) with timestamps, confirming structured event logging.",
+        "Read-only audit export links (CSV/JSON for all teams, operations, and revenue) are available at /api/control/audit/export endpoints and inspected as read-only.",
+        "No write operations (Start, Pause, Resume, Kill, Approve, Reject, Rogue Infra) were performed; all interactions were filter selection and inspection only."
+      ]
+    },
+    "error": null,
+    "step": "Task completed",
+    "stepCount": 17,
+    "duration": 257,
+    "runUrl": "https://agent.tinyfish.ai/runs/6deb44fa-0ef7-4755-9488-a7dec434a6f8",
+    "upsell_enabled": true
+  },
+  "public_boundary_checks": [
+    {
+      "name": "fleet_get",
+      "status": 200
+    },
+    {
+      "name": "other_workspace_denied",
+      "status": 403
+    },
+    {
+      "name": "other_team_denied",
+      "status": 403
+    },
+    {
+      "name": "out_of_scope_write_denied",
+      "status": 403
+    }
+  ],
+  "audience": "public"
+}
