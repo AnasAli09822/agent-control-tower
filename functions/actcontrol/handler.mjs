@@ -309,20 +309,20 @@ export default {
       // Every non-health control-plane route is private. The Vercel server proxy
       // injects the shared key; browsers never receive it.
       requireApiKey(request);
-      if (request.method === "GET" && path === "/fleet") return getFleet(url);
-      if (request.method === "GET" && path === "/approvals") return getApprovals(url);
-      if (request.method === "GET" && path === "/usage") return getUsage(url);
-      if (request.method === "GET" && path === "/audit/export") return getAudit(url);
+      if (request.method === "GET" && path === "/fleet") return await getFleet(url);
+      if (request.method === "GET" && path === "/approvals") return await getApprovals(url);
+      if (request.method === "GET" && path === "/usage") return await getUsage(url);
+      if (request.method === "GET" && path === "/audit/export") return await getAudit(url);
       const replay = path.match(/^\/replay\/([^/]+)$/);
-      if (request.method === "GET" && replay) return getReplay(url, decodeURIComponent(replay[1]));
+      if (request.method === "GET" && replay) return await getReplay(url, decodeURIComponent(replay[1]));
 
-      if (request.method === "POST" && path === "/scenarios/start-all") return runScenario(request, "start-all");
-      if (request.method === "POST" && path === "/scenarios/rogue-infra") return runScenario(request, "rogue-infra");
+      if (request.method === "POST" && path === "/scenarios/start-all") return await runScenario(request, "start-all");
+      if (request.method === "POST" && path === "/scenarios/rogue-infra") return await runScenario(request, "rogue-infra");
       const intervention = path.match(/^\/agents\/([^/]+)\/(pause|resume|kill)$/);
-      if (request.method === "POST" && intervention) return intervene(request, url, decodeURIComponent(intervention[1]), intervention[2]);
+      if (request.method === "POST" && intervention) return await intervene(request, url, decodeURIComponent(intervention[1]), intervention[2]);
       const approval = path.match(/^\/approvals\/([^/]+)\/(approve|reject)$/);
-      if (request.method === "POST" && approval) return decideApproval(request, decodeURIComponent(approval[1]), approval[2]);
-      if (request.method === "POST" && path === "/tools/guard") return guardTool(request);
+      if (request.method === "POST" && approval) return await decideApproval(request, decodeURIComponent(approval[1]), approval[2]);
+      if (request.method === "POST" && path === "/tools/guard") return await guardTool(request);
       return json({ error: "not_found" }, 404);
     } catch (error) {
       console.error("actcontrol", error instanceof Error ? error.message : error);
