@@ -25,7 +25,7 @@ async function suite() {
     if (!ok) throw new Error(`acceptance_failed:${name}`);
   };
   const q = async (sql, values = []) => (await pool.query(sql, values)).rows;
-  const request = async (path, body, key = id(path.replace(/[^a-z]/g, ""))) => {
+  const request = async (path, body, key = `${id(path.replace(/[^a-z]/g, ""))}:${randomBytes(6).toString("hex")}`) => {
     const r = await handler.fetch(new Request(`https://acceptance.invalid${path}`, {
       method: body ? "POST" : "GET", headers: { "x-api-key": internalKey, "content-type": "application/json", "idempotency-key": key },
       ...(body ? { body: JSON.stringify({ workspaceId: ws, operatorId: operator, ...body }) } : {}),
