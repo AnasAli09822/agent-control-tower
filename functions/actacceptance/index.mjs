@@ -139,6 +139,33 @@ async function suite() {
     let lateEffect=false;
     await deny("post_kill_old_worker_blocked",c=>executeTool(c,started.ctx,{stepNo:2,toolName:"billing.issue_credit",riskScore:32,payload:{ticket_id:boundedTicket,amount_usd:125},apply:async()=>{lateEffect=true;return {};}}));
     check("post_kill_zero_late_effect",!lateEffect,{lateEffect});
+    const persistedConcurrency=await q("select (select count(*) from account_credits where id=$1)::int as effects,(select count(*) from tool_actions where run_id=$2)::int as actions",[id("credit_concurrent"),started.ctx.runId]);
+    check("concurrent_effect_committed_once_no_late_action",persistedConcurrency[0].effects===1 && persistedConcurrency[0].actions===1,persistedConcurrency[0]);
+
+    // Exercise the two real handlers, queued behind the same authoritative
+    // agent lock. Kill queues first; approval must reread its cancelled gate.
+    const raceTask=id("task_race");
+    await q("insert into tasks(id,workspace_id,team_id,assigned_agent_id,title,task_type,goal,created_by_operator_id,idempotency_key,input_json) values($1,$2,$3,$4,'Approval kill race','lead_qualification','Serialize approval and kill',$5,$1,$6::jsonb)",[raceTask,ws,rev,sales,operator,JSON.stringify({primaryAccountId:account,primaryLeadId:lead,discountLeadId:discountLead})]);
+    const raceRun=await withTx(c=>startAllScenario(c,{...args,taskIds:[raceTask],idempotencyKey:id("race"),correlationId:id("race")}));
+    const blocker=await pool.connect();
+    let raceKill,raceApprove,killWait=[],bothWait=[],blockerPid;
+    try {
+      await blocker.query("begin");
+      blockerPid=(await blocker.query("select pg_backend_pid() as pid")).rows[0].pid;
+      await blocker.query("select id from agents where id=$1 for update",[sales]);
+      raceKill=request(`/agents/${sales}/kill`,{teamId:rev});
+      let deadline=Date.now()+8000;
+      while(Date.now()<deadline && !killWait.length) killWait=await q("select pid,pg_blocking_pids(pid) as blockers from pg_stat_activity where $1=any(pg_blocking_pids(pid))",[blockerPid]);
+      raceApprove=request(`/approvals/${raceRun.approvals[0]}/approve`,{teamId:rev});
+      deadline=Date.now()+8000;
+      while(Date.now()<deadline && bothWait.length<2) bothWait=await q("select pid,pg_blocking_pids(pid) as blockers from pg_stat_activity where $1=any(pg_blocking_pids(pid))",[blockerPid]);
+      await blocker.query("commit");
+    } finally {await blocker.query("rollback").catch(()=>{});blocker.release();}
+    const raceResponses=await Promise.all([raceKill,raceApprove]);
+    const raceLead=await q("select stage,requested_discount_pct from crm_leads where id=$1",[discountLead]);
+    report.approvalKillConcurrency={blockerPid,killWait,bothWait,responses:raceResponses,lead:raceLead[0]};
+    check("genuine_approval_kill_overlap_no_deadlock",killWait.length===1 && bothWait.length===2 && raceResponses[0].status===200 && raceResponses[1].status===409,report.approvalKillConcurrency);
+    check("kill_wins_approval_zero_discount_effect",raceLead[0].stage==="new" && Number(raceLead[0].requested_discount_pct)===18,raceLead[0]);
     // Authoritative epoch check even when an outstanding run remains running.
     const epochAgent=id("epoch_agent"),epochTask=id("epoch_task"),epochRun=id("epoch_run");
     await withTx(async c=>{
