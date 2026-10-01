@@ -19,7 +19,7 @@ async function suite() {
   const service = id("svc"), boundedTicket = id("ticket125"), gatedTicket = id("ticket350");
   const account = id("account"), lead = id("lead"), discountLead = id("discount");
   const taskIds = [id("task_infra"), id("task_support"), id("task_sales")];
-  const report = { startedAt: new Date().toISOString(), workspace: ws, database: "controltower", checks: [], concurrency: {} };
+  const report = { verificationRevision: "approval-lock-chain-v2", startedAt: new Date().toISOString(), workspace: ws, database: "controltower", checks: [], concurrency: {} };
   const check = (name, ok, evidence) => {
     report.checks.push({ name, passed: !!ok, evidence });
     if (!ok) throw new Error(`acceptance_failed:${name}`);
@@ -158,7 +158,9 @@ async function suite() {
       while(Date.now()<deadline && !killWait.length) killWait=await q("select pid,pg_blocking_pids(pid) as blockers from pg_stat_activity where $1=any(pg_blocking_pids(pid))",[blockerPid]);
       raceApprove=request(`/approvals/${raceRun.approvals[0]}/approve`,{teamId:rev});
       deadline=Date.now()+8000;
-      while(Date.now()<deadline && bothWait.length<2) bothWait=await q("select pid,pg_blocking_pids(pid) as blockers from pg_stat_activity where $1=any(pg_blocking_pids(pid))",[blockerPid]);
+      // PostgreSQL queues a second row-lock waiter behind the first waiter;
+      // it may name that waiter, rather than the root holder, as its blocker.
+      while(Date.now()<deadline && bothWait.length<2) bothWait=await q("select pid,pg_blocking_pids(pid) as blockers from pg_stat_activity where $1=any(pg_blocking_pids(pid)) or $2=any(pg_blocking_pids(pid))",[blockerPid,killWait[0]?.pid ?? blockerPid]);
       await blocker.query("commit");
     } finally {await blocker.query("rollback").catch(()=>{});blocker.release();}
     const raceResponses=await Promise.all([raceKill,raceApprove]);
