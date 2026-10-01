@@ -1,19 +1,23 @@
-# Failure test — Infrastructure Ops
+# Failure tests — main Neon database
 
-The required final demonstration is rogue behavior, rising drift, auto-pause, operator kill, committed epoch increment, rejected stale-worker tool execution, and audit evidence of zero successful business mutations after kill.
+Migration 006 closes a verified defensive gap: the previous guard could accept a synthetic old running-run context after its authoritative agent had been killed or advanced to a different epoch. That earlier fixture was a database probe, not evidence of a deployed worker exploit.
 
-## Fresh defensive finding
+The correction was first tested on isolated branch `br-square-dew-b57d7tcl`, then applied atomically to main with explicit user approval at 2026-09-30T20:44:16.039Z. Both the old guard and exact approval foreign keys remain enabled.
 
-Main's current guard rejects a stale action against a killed current run. A separate guard fixture exposed that a killed agent can still be referenced by an outstanding old running run with the old run epoch. Main accepted the synthetic tool action. This is recorded under `preflight.authoritative_agent_epoch` in workspace `ws_preflight_20260929b`.
+## Fresh complete acceptance
 
-Migration 006 locks and checks the authoritative agent before the run. On isolated branch `br-square-dew-b57d7tcl`, it rejected both a killed-agent/old-run context and an active agent whose epoch differs from the worker/run epoch. Exact approval binding still passed. Production application is pending.
+The 2026-10-01 private verification service created a new workspace with zero initial runs and credits. It executed normal Infra, Support and Sales tasks, approved the exact $350 credit once, rejected the discount without applying it, verified scope and payload/action/risk substitution defenses, then ran rogue Infra. Drift reached 92; both production proposals were blocked and the service rate limit stayed 1200.
 
-## Remaining final test
+Resume, pause and kill returned 200. The stale worker probe returned SQLSTATE 55000. Resume after kill returned 409. An active agent at epoch 1 with an old running run/worker at epoch 0 also returned SQLSTATE 55000.
 
-1. Run normal and approval scenarios with fresh isolated fixtures.
-2. Run rogue Infra and show actual drift/auto-pause evidence.
-3. Commit kill, then attempt the stale mutation against both current and outstanding run contexts.
-4. Test real overlapping mutation/kill and pause/kill requests; verify the database commit ordering.
-5. Count successful domain mutations after the kill boundary, export audit evidence, and verify terminal kill behavior.
+## Actual overlapping worker and kill
 
-The initial connector race returned worker completion before kill. It is not a proof of overlapping concurrency. The required final pass condition is zero successful domain mutations after committed kill; it has not yet been established end to end on main.
+An actual `executeTool` credit transaction held the guard's agent/run locks while its application callback waited at a coordinated barrier. A separate HTTP operator kill overlapped it. PostgreSQL showed PID 1413 blocked by worker PID 1416. The barrier then released; exactly one credit and one tool action committed before kill completed. A later stale attempt was denied before its callback, with no additional action or effect.
+
+## Actual overlapping approval and kill
+
+Two real HTTP handlers queued behind an agent row lock. PostgreSQL showed kill PID 1414 blocked by holder PID 1413, and approval PID 1416 queued behind kill PID 1414. After release, kill returned 200 and the approval returned `409 conflict:approval_cancelled`, without deadlock. The lead stayed new with its original 18% request; the proposed 15% discount was never applied.
+
+The observer follows the complete lock chain because PostgreSQL may report the first waiter as the blocker of the second waiter. Two parallel connector calls without observed database overlap are not accepted as this evidence.
+
+All 29 acceptance checks passed. Full inputs, IDs, response/effect evidence and timestamps are in `docs/evidence/2026-10-01-acceptance.json`. Business systems and agent usage are simulated; the transactions and guard behavior are actual database execution.

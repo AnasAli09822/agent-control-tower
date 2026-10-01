@@ -2,24 +2,23 @@
 
 ```mermaid
 flowchart TD
- UI["Next.js operator UI — Vercel"] --> Proxy["Scoped server proxy — Vercel OIDC"]
- Proxy --> Control["Neon control API — actctlp3"]
+ UI["Operator dashboard — Sites"] --> Proxy["Scoped server proxy"]
+ Proxy --> Control["Neon control API — actctlsites"]
  Proxy --> Token["Neon signed-token endpoint"]
  Token --> UI
- UI --> SSE["Direct SSE — actevtp3"]
- Control --> DB["Neon Postgres"]
+ UI --> SSE["Direct SSE — actevtsites"]
+ Control --> Guard["Agent epoch and exact approval guards"]
+ Guard --> DB["Neon Postgres"]
  SSE --> DB
- Control --> Guard["Tool execution guard"]
- Guard --> DB
  Guard --> Systems["CRM, Support, Infra simulators"]
 ```
 
-The control plane contains the registry, command bus, policy/risk evaluation, approvals, drift detection, usage tracking, and audit. Durable state and append-only evidence live in Neon Postgres.
+Sites compiles the App Router through Vinext into a Cloudflare Worker. It uses HTTP to Neon; no direct PostgreSQL TCP connection runs in Sites. The control plane owns registry, execution, policy/risk gates, approvals, drift, usage and audit. Durable state and append-only evidence live in Neon.
 
-Vercel forwards short-lived workload identity. Owner, project, environment, issuer, audience, expiry, and signature are verified in Neon. The internal handler key exists only inside the Neon control Function isolate. The event-signing secret is configured only on the Neon event Function; Vercel requests a signed 120-second token bound to the exact workspace/team.
+The Site signs upstream requests for 30 seconds with an HMAC secret held only in server runtime. Claims bind the exact Site, audience, workspace, method, query, body digest and idempotency key. Neon validates that signature and independently enforces the canonical demo scope. The event secret remains exclusively in Neon; the browser receives only a scoped 120-second SSE token. Existing Vercel OIDC services are retained as a fallback.
 
-The public proxy remains constrained to `ws_demo`, `team_operations`, `team_revenue`, the three demo agents, and `operator_demo`. Stream replay uses persisted per-workspace sequences and supports Last-Event-ID, after_sequence, reconnect, and heartbeat.
+Migration 005 binds each execution to its exact workspace/team/agent/run/task and approved action/payload/risk. Migration 006, applied to main on 2026-09-30, checks and locks the authoritative agent first and run second until mutation commit. Operator controls and approval resolution use the same agent-first lock order.
 
-Migration 005 enforces the exact run/task/agent/team/workspace and approval/action/payload/risk binding through deferred composite foreign keys. Migration 006 adds a fence that locks and checks the authoritative agent and run until the mutation transaction commits. **006 is tested on isolated branch `br-square-dew-b57d7tcl` and has not been applied to main.** Phase 10 cannot freeze before that gate and fresh end-to-end acceptance pass.
+Real concurrency evidence shows kill waits for an already guarded worker transaction, then rejects later stale execution. A queued approval behind kill rereads its cancelled gate and returns 409 without applying the discount. Evidence is in `docs/evidence/2026-10-01-acceptance.json`.
 
-Reasoning replay contains structured operational summaries and evidence references. Hidden chain-of-thought is neither stored nor exposed. All external business systems and metered agent outputs in this demo are simulated.
+Replay stores structured operational summaries and references, not hidden chain-of-thought. External business systems and metered agent outputs are simulated. Workspace-scoped event sequences support resume cursors, heartbeat and reconnect.

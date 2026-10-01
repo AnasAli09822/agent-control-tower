@@ -1,0 +1,661 @@
+{
+  "challenge": "Agent Control Tower",
+  "recorded_at": "2026-10-01T02:13:40.960Z",
+  "site": {
+    "project_id": "appgprj_6abc486150bc8191a53c0204525ce08d",
+    "url": "https://agent-control-tower.tadafuqai.chatgpt.site",
+    "audience": "public",
+    "publication_evidence": "docs/evidence/2026-10-01-publication.json"
+  },
+  "neon": {
+    "project_id": "weathered-poetry-97205616",
+    "branch_id": "br-gentle-butterfly-b57bd2r5",
+    "database": "controltower",
+    "migration_006_applied_at": "2026-09-30T20:44:16.039Z",
+    "control_slug": "actctlsites",
+    "control_deployment": 5,
+    "events_slug": "actevtsites",
+    "events_deployment": 1
+  },
+  "source": {
+    "github_branch": "sites-migration",
+    "validated_code_commit": "342cf3cf10e0d47aff3a13c40965c05e75f90d0b",
+    "package_run": 36804693284,
+    "bundle_hashes": {
+      "actcontrol-sites": {
+        "zip_sha256": "0932fa3451506bec71ef98e03c47304ac45e2fc61c90fc31cec6dd5123239805",
+        "code_sha256": "80343239e1854986a2610ebf89e8e092d7a8a39ddb9433e560217bc3b69341c8"
+      },
+      "actevents-sites": {
+        "zip_sha256": "13fde4ba1ce342e7e287f8d6acd2684e02f297d5a0869408011c964e602140f3",
+        "code_sha256": "00801fe21fc4c0036984f98a13cc1eb8114c6dd735899312ebbaa547e47e5b2f"
+      },
+      "actacceptance": {
+        "zip_sha256": "40de00de20b5351dba39c7441825ca41a41ba7984ffed3df90af3baf0788a8b3",
+        "code_sha256": "70a858b990a91702a21eabb1298ca527c0b0d2796225ea4357b324379a2f178b"
+      }
+    }
+  },
+  "local_checks": {
+    "named_unit_tests": 21,
+    "passed": 21,
+    "typecheck": "passed",
+    "build": {
+      "result": "passed",
+      "source_commit": "321678ddd03d511f452fc0c5975dcaab52d35df7",
+      "workflow": "validate-sites",
+      "run_id": 36776218976
+    }
+  },
+  "acceptance": {
+    "status": 200,
+    "report": {
+      "verificationRevision": "approval-lock-chain-v2",
+      "startedAt": "2026-10-01T02:13:08.229Z",
+      "workspace": "ws_acceptance_9e920fdc8f",
+      "database": "controltower",
+      "checks": [
+        {
+          "name": "main_migration_006_installed",
+          "passed": true,
+          "evidence": [
+            {
+              "version": "006_authoritative_epoch_fence"
+            }
+          ]
+        },
+        {
+          "name": "fresh_fixture_zero_baseline",
+          "passed": true,
+          "evidence": {
+            "runs": 0,
+            "credits": 0
+          }
+        },
+        {
+          "name": "normal_three_fresh_runs",
+          "passed": true,
+          "evidence": {
+            "runs": [
+              "run_kinfra9e920fdc8f_1",
+              "run_upport9e920fdc8f_1",
+              "run_ksales9e920fdc8f_1"
+            ],
+            "approvals": [
+              "approval_pport9e920fdc8f1_4",
+              "approval_sales9e920fdc8f1_4"
+            ],
+            "idempotent": false
+          }
+        },
+        {
+          "name": "risk_gate_no_350_effect_before_approval",
+          "passed": true,
+          "evidence": [
+            {
+              "ticket_id": "ticket125_9e920fdc8f",
+              "amount_usd": "125.00"
+            }
+          ]
+        },
+        {
+          "name": "normal_sales_scoring_effect",
+          "passed": true,
+          "evidence": {
+            "stage": "qualified",
+            "score": 82
+          }
+        },
+        {
+          "name": "normal_idempotent_no_duplicate_runs",
+          "passed": true,
+          "evidence": {
+            "runs": [
+              "run_kinfra9e920fdc8f_1",
+              "run_upport9e920fdc8f_1",
+              "run_ksales9e920fdc8f_1"
+            ],
+            "approvals": [],
+            "idempotent": true
+          }
+        },
+        {
+          "name": "approval_wrong_team_denied",
+          "passed": true,
+          "evidence": {
+            "status": 404,
+            "body": {
+              "error": "not_found:approval"
+            }
+          }
+        },
+        {
+          "name": "approval_exact_payload_substitution_denied",
+          "passed": true,
+          "evidence": {
+            "code": "23503",
+            "message": "insert or update on table \"tool_actions\" violates foreign key constraint \"tool_approval_exact_fk\""
+          }
+        },
+        {
+          "name": "approval_exact_action_substitution_denied",
+          "passed": true,
+          "evidence": {
+            "code": "23503",
+            "message": "insert or update on table \"tool_actions\" violates foreign key constraint \"tool_approval_exact_fk\""
+          }
+        },
+        {
+          "name": "approval_exact_risk_substitution_denied",
+          "passed": true,
+          "evidence": {
+            "code": "23503",
+            "message": "insert or update on table \"tool_actions\" violates foreign key constraint \"tool_approval_exact_fk\""
+          }
+        },
+        {
+          "name": "approval_approve_http_200",
+          "passed": true,
+          "evidence": {
+            "status": 200,
+            "body": {
+              "approval": {
+                "id": "approval_pport9e920fdc8f1_4",
+                "workspace_id": "ws_acceptance_9e920fdc8f",
+                "team_id": "team_ops_9e920fdc8f",
+                "agent_id": "support_9e920fdc8f",
+                "run_id": "run_upport9e920fdc8f_1",
+                "task_id": "task_support_9e920fdc8f",
+                "action_type": "billing.issue_credit",
+                "action_payload": {
+                  "ticket_id": "ticket350_9e920fdc8f",
+                  "amount_usd": 350
+                },
+                "action_payload_hash": "03b1e5d14b8e6f0f48293edbce0ba66e45f9691cccdf2d17b103e0c95aab71f6",
+                "reason": "Policy requires operator approval",
+                "evidence_json": [
+                  {
+                    "source": "support_tickets",
+                    "ticket_id": "ticket350_9e920fdc8f",
+                    "requested_credit_usd": 350
+                  },
+                  {
+                    "source": "policy_support_credit",
+                    "approval_above_usd": 200
+                  }
+                ],
+                "risk_level": "high",
+                "risk_score": "76.00",
+                "estimated_impact_json": {
+                  "credit_usd": 350
+                },
+                "status": "approved",
+                "requested_at": "2026-10-01T02:13:08.314Z",
+                "decided_by_operator_id": "operator_9e920fdc8f",
+                "decided_at": "2026-10-01T02:13:08.684Z",
+                "decision_note": null,
+                "version": "1",
+                "idempotency_key": "run_upport9e920fdc8f_1:approval:4"
+              },
+              "resolution": {
+                "toolActionId": "tool_pport9e920fdc8f1_4",
+                "decision": "approve"
+              }
+            }
+          }
+        },
+        {
+          "name": "approval_exact_350_effect_once",
+          "passed": true,
+          "evidence": [
+            {
+              "ticket_id": "ticket350_9e920fdc8f",
+              "amount_usd": "350.00"
+            }
+          ]
+        },
+        {
+          "name": "approval_duplicate_conflict",
+          "passed": true,
+          "evidence": {
+            "status": 409,
+            "body": {
+              "error": "conflict:approval_approved"
+            }
+          }
+        },
+        {
+          "name": "approval_reject_no_discount_effect",
+          "passed": true,
+          "evidence": {
+            "rejected": {
+              "status": 200,
+              "body": {
+                "approval": {
+                  "id": "approval_sales9e920fdc8f1_4",
+                  "workspace_id": "ws_acceptance_9e920fdc8f",
+                  "team_id": "team_rev_9e920fdc8f",
+                  "agent_id": "sales_9e920fdc8f",
+                  "run_id": "run_ksales9e920fdc8f_1",
+                  "task_id": "task_sales_9e920fdc8f",
+                  "action_type": "crm.propose_discount",
+                  "action_payload": {
+                    "lead_id": "discount_9e920fdc8f",
+                    "discount_pct": 15
+                  },
+                  "action_payload_hash": "7f4bef0ef6e576f6d593b868e5ac0124861abe9daba3b492c5ebee6e7febef18",
+                  "reason": "Policy requires operator approval",
+                  "evidence_json": [
+                    {
+                      "source": "crm_leads",
+                      "lead_id": "discount_9e920fdc8f",
+                      "requested_discount_pct": 18
+                    },
+                    {
+                      "source": "policy_sales_discount",
+                      "threshold_pct": 10
+                    }
+                  ],
+                  "risk_level": "high",
+                  "risk_score": "72.00",
+                  "estimated_impact_json": {
+                    "discount_pct": 15,
+                    "annual_value_usd": 54000
+                  },
+                  "status": "rejected",
+                  "requested_at": "2026-10-01T02:13:08.314Z",
+                  "decided_by_operator_id": "operator_9e920fdc8f",
+                  "decided_at": "2026-10-01T02:13:08.758Z",
+                  "decision_note": null,
+                  "version": "1",
+                  "idempotency_key": "run_ksales9e920fdc8f_1:approval:4"
+                },
+                "resolution": {
+                  "toolActionId": "tool_sales9e920fdc8f1_4",
+                  "decision": "reject"
+                }
+              }
+            },
+            "lead": {
+              "stage": "new",
+              "requested_discount_pct": "18.00"
+            }
+          }
+        },
+        {
+          "name": "team_scoped_fleet",
+          "passed": true,
+          "evidence": [
+            "infra_9e920fdc8f",
+            "support_9e920fdc8f"
+          ]
+        },
+        {
+          "name": "persisted_replay_structured",
+          "passed": true,
+          "evidence": {
+            "status": 200,
+            "steps": 5
+          }
+        },
+        {
+          "name": "persisted_usage_simulated_nonzero",
+          "passed": true,
+          "evidence": {
+            "total_tokens": "8360",
+            "input_tokens": "6480",
+            "output_tokens": "1880",
+            "cached_tokens": "0",
+            "total_cost_usd": "0.02800000"
+          }
+        },
+        {
+          "name": "rogue_real_auto_pause_and_two_blocks",
+          "passed": true,
+          "evidence": {
+            "rogue": {
+              "taskId": "rogue_task_rogue9e920fdc8f",
+              "runId": "rogue_run_rogue9e920fdc8f",
+              "driftScore": 92,
+              "autoPaused": true,
+              "controlEpoch": "0",
+              "idempotent": false
+            },
+            "blocked": [
+              {
+                "tool_name": "infra.change_rate_limit",
+                "status": "cancelled"
+              },
+              {
+                "tool_name": "infra.rollback_release",
+                "status": "cancelled"
+              }
+            ],
+            "infrastructure": [
+              {
+                "rate_limit_rps": 1200
+              }
+            ]
+          }
+        },
+        {
+          "name": "intervention_resume_pause_kill",
+          "passed": true,
+          "evidence": {
+            "resume": 200,
+            "pause": 200,
+            "kill": {
+              "status": 200,
+              "body": {
+                "agent": {
+                  "id": "infra_9e920fdc8f",
+                  "workspace_id": "ws_acceptance_9e920fdc8f",
+                  "team_id": "team_ops_9e920fdc8f",
+                  "name": "infra_9e920fdc8f",
+                  "agent_type": "infra_ops",
+                  "current_status": "killed",
+                  "drift_score": "92.00",
+                  "control_epoch": "1",
+                  "version": "7",
+                  "last_heartbeat_at": "2026-10-01T02:13:08.314Z",
+                  "created_at": "2026-10-01T02:13:08.274Z",
+                  "updated_at": "2026-10-01T02:13:08.970Z"
+                },
+                "intervention": {
+                  "id": "28",
+                  "workspace_id": "ws_acceptance_9e920fdc8f",
+                  "team_id": "team_ops_9e920fdc8f",
+                  "operator_id": "operator_9e920fdc8f",
+                  "agent_id": "infra_9e920fdc8f",
+                  "run_id": "rogue_run_rogue9e920fdc8f",
+                  "task_id": "rogue_task_rogue9e920fdc8f",
+                  "command": "kill",
+                  "reason": "kill from operator console",
+                  "expected_version": null,
+                  "resulting_control_epoch": "1",
+                  "idempotency_key": "agentsinfraefdcfkill_9e920fdc8f:01fb393a5730",
+                  "created_at": "2026-10-01T02:13:08.970Z"
+                },
+                "staleWorkerGuard": {
+                  "blocked": true,
+                  "reason": "tool execution blocked by agent state: killed",
+                  "evidenceToolActionId": "stale_nrogue9e920fdc8f_1"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "killed_agent_terminal",
+          "passed": true,
+          "evidence": {
+            "status": 409,
+            "body": {
+              "error": "conflict:agent_killed"
+            }
+          }
+        },
+        {
+          "name": "genuine_overlap_kill_waits_for_worker_commit",
+          "passed": true,
+          "evidence": {
+            "workerPid": 1416,
+            "observedBlockedConnections": [
+              {
+                "pid": 1413,
+                "blockers": [
+                  1416
+                ],
+                "wait_event_type": "Lock"
+              }
+            ],
+            "workerResult": "tool_oncur9e920fdc8f1_1",
+            "killStatus": 200
+          }
+        },
+        {
+          "name": "post_kill_old_worker_blocked",
+          "passed": true,
+          "evidence": {
+            "code": "55000",
+            "message": "tool execution blocked by agent state: killed"
+          }
+        },
+        {
+          "name": "post_kill_zero_late_effect",
+          "passed": true,
+          "evidence": {
+            "lateEffect": false
+          }
+        },
+        {
+          "name": "concurrent_effect_committed_once_no_late_action",
+          "passed": true,
+          "evidence": {
+            "effects": 1,
+            "actions": 1
+          }
+        },
+        {
+          "name": "genuine_approval_kill_overlap_no_deadlock",
+          "passed": true,
+          "evidence": {
+            "blockerPid": 1413,
+            "killWait": [
+              {
+                "pid": 1414,
+                "blockers": [
+                  1413
+                ]
+              }
+            ],
+            "bothWait": [
+              {
+                "pid": 1414,
+                "blockers": [
+                  1413
+                ]
+              },
+              {
+                "pid": 1416,
+                "blockers": [
+                  1414
+                ]
+              }
+            ],
+            "responses": [
+              {
+                "status": 200,
+                "body": {
+                  "agent": {
+                    "id": "sales_9e920fdc8f",
+                    "workspace_id": "ws_acceptance_9e920fdc8f",
+                    "team_id": "team_rev_9e920fdc8f",
+                    "name": "sales_9e920fdc8f",
+                    "agent_type": "sales_ops",
+                    "current_status": "killed",
+                    "drift_score": "0.00",
+                    "control_epoch": "1",
+                    "version": "7",
+                    "last_heartbeat_at": "2026-10-01T02:13:09.131Z",
+                    "created_at": "2026-10-01T02:13:08.274Z",
+                    "updated_at": "2026-10-01T02:13:09.270Z"
+                  },
+                  "intervention": {
+                    "id": "30",
+                    "workspace_id": "ws_acceptance_9e920fdc8f",
+                    "team_id": "team_rev_9e920fdc8f",
+                    "operator_id": "operator_9e920fdc8f",
+                    "agent_id": "sales_9e920fdc8f",
+                    "run_id": "run_skrace9e920fdc8f_1",
+                    "task_id": "task_race_9e920fdc8f",
+                    "command": "kill",
+                    "reason": "kill from operator console",
+                    "expected_version": null,
+                    "resulting_control_epoch": "1",
+                    "idempotency_key": "agentssalesefdcfkill_9e920fdc8f:8362f084acdb",
+                    "created_at": "2026-10-01T02:13:09.270Z"
+                  },
+                  "idempotent": false
+                }
+              },
+              {
+                "status": 409,
+                "body": {
+                  "error": "conflict:approval_cancelled"
+                }
+              }
+            ],
+            "lead": {
+              "stage": "new",
+              "requested_discount_pct": "18.00"
+            }
+          }
+        },
+        {
+          "name": "kill_wins_approval_zero_discount_effect",
+          "passed": true,
+          "evidence": {
+            "stage": "new",
+            "requested_discount_pct": "18.00"
+          }
+        },
+        {
+          "name": "authoritative_epoch_rejects_old_running_run",
+          "passed": true,
+          "evidence": {
+            "code": "55000",
+            "message": "tool execution blocked by authoritative control epoch: worker 0, agent 1"
+          }
+        },
+        {
+          "name": "persisted_event_order_unique",
+          "passed": true,
+          "evidence": {
+            "count": 77,
+            "first": {
+              "sequence": "1",
+              "event_type": "task.started"
+            },
+            "last": {
+              "sequence": "77",
+              "event_type": "agent.kill"
+            }
+          }
+        },
+        {
+          "name": "audit_contains_operator_and_denial",
+          "passed": true,
+          "evidence": {
+            "status": 200
+          }
+        }
+      ],
+      "concurrency": {
+        "workerPid": 1416,
+        "observedBlockedConnections": [
+          {
+            "pid": 1413,
+            "blockers": [
+              1416
+            ],
+            "wait_event_type": "Lock"
+          }
+        ],
+        "workerResult": "tool_oncur9e920fdc8f1_1",
+        "killStatus": 200
+      },
+      "approvalKillConcurrency": {
+        "blockerPid": 1413,
+        "killWait": [
+          {
+            "pid": 1414,
+            "blockers": [
+              1413
+            ]
+          }
+        ],
+        "bothWait": [
+          {
+            "pid": 1414,
+            "blockers": [
+              1413
+            ]
+          },
+          {
+            "pid": 1416,
+            "blockers": [
+              1414
+            ]
+          }
+        ],
+        "responses": [
+          {
+            "status": 200,
+            "body": {
+              "agent": {
+                "id": "sales_9e920fdc8f",
+                "workspace_id": "ws_acceptance_9e920fdc8f",
+                "team_id": "team_rev_9e920fdc8f",
+                "name": "sales_9e920fdc8f",
+                "agent_type": "sales_ops",
+                "current_status": "killed",
+                "drift_score": "0.00",
+                "control_epoch": "1",
+                "version": "7",
+                "last_heartbeat_at": "2026-10-01T02:13:09.131Z",
+                "created_at": "2026-10-01T02:13:08.274Z",
+                "updated_at": "2026-10-01T02:13:09.270Z"
+              },
+              "intervention": {
+                "id": "30",
+                "workspace_id": "ws_acceptance_9e920fdc8f",
+                "team_id": "team_rev_9e920fdc8f",
+                "operator_id": "operator_9e920fdc8f",
+                "agent_id": "sales_9e920fdc8f",
+                "run_id": "run_skrace9e920fdc8f_1",
+                "task_id": "task_race_9e920fdc8f",
+                "command": "kill",
+                "reason": "kill from operator console",
+                "expected_version": null,
+                "resulting_control_epoch": "1",
+                "idempotency_key": "agentssalesefdcfkill_9e920fdc8f:8362f084acdb",
+                "created_at": "2026-10-01T02:13:09.270Z"
+              },
+              "idempotent": false
+            }
+          },
+          {
+            "status": 409,
+            "body": {
+              "error": "conflict:approval_cancelled"
+            }
+          }
+        ],
+        "lead": {
+          "stage": "new",
+          "requested_discount_pct": "18.00"
+        }
+      },
+      "passed": true,
+      "completedAt": "2026-10-01T02:13:09.360Z"
+    }
+  },
+  "browser": {
+    "run_id": "d1d16245-6606-4c8d-8c24-c9a9f9b6f4cb",
+    "url": "https://agent.tinyfish.ai/runs/d1d16245-6606-4c8d-8c24-c9a9f9b6f4cb",
+    "status": "completed",
+    "observations": [
+      "Live SSE, 3 agents, Operations=2, Revenue=1, replay and JSON/CSV links verified",
+      "Demo Infra and Sales were killed before this run; approvals already resolved",
+      "Browser actions could not replay a new normal/approval/rogue cycle from terminal seed state",
+      "Idempotent start notice and simulated usage labels corrected after this run"
+    ],
+    "scope": "Browser observations are separate from the fresh private Neon acceptance fixture."
+  },
+  "limits": [
+    "CRM, Support, Infra, agent reasoning summaries, tokens and cost are simulated.",
+    "No 90-second Loom recording exists; script is preparation material.",
+    "Canonical public demo agents remain terminal after kill; no silent reset was performed."
+  ]
+}

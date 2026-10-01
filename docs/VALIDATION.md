@@ -142,3 +142,6 @@ Branch: `br-square-dew-b57d7tcl`, cloned from main. Migration 006 was applied in
 - No migrations were rerun on main. 006 remains unapplied there.
 
 The initial two-request connector race had worker evidence before kill evidence; it is not accepted as a genuine overlapping concurrency test. Fresh external normal/approval/rogue acceptance, actual overlapping races, UI interaction, anonymous URL checks, and Phase 10 freeze remain pending.
+# Current result — 2026-10-01
+
+The technical acceptance gates below are now superseded by `docs/evidence/2026-10-01-acceptance.json`: main migration 006 is applied, 29 fresh acceptance checks and 21 named tests pass, actual worker/kill and approval/kill overlap is proven, and Sites replaces Vercel as the verified public hosting path. The historical entries below retain their original dates and findings. The required Loom remains unrecorded.

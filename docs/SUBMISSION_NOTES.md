@@ -1,9 +1,11 @@
-# Submission notes — preparation checkpoint
+# Submission notes
 
-Agent Control Tower is a standalone control plane, with Vercel UI/proxy, Vercel OIDC identity, Neon control/SSE Functions, and durable Neon Postgres state. CRM, Support, Infrastructure, agent usage, and operational reasoning summaries are simulated. Hidden chain-of-thought is not collected.
+Agent Control Tower is published at https://agent-control-tower.tadafuqai.chatgpt.site and maintained at https://github.com/AnasAli09822/agent-control-tower/tree/sites-migration.
 
-Repository: https://github.com/AnasAli09822/agent-control-tower
+Sites hosts the operator UI and scoped proxy. Neon Functions host control/SSE with durable PostgreSQL state. CRM, Support, Infrastructure, agent usage and operational reasoning summaries are simulated; hidden chain-of-thought is not collected.
 
-Architecture snapshot, project thesis, 90-second walkthrough script, and failure-test description exist in this repository. The script is not a recorded Loom.
+Main migration 006 is applied. The fresh acceptance suite passed 29 checks, including genuine overlapping worker/kill and approval/kill requests, exact approval defenses, safe rejection, rogue auto-pause and terminal kill. Local validation passed 21 named tests and TypeScript. Deployment provenance and live checks are recorded in `docs/evidence/2026-10-01-acceptance.json`.
 
-**Not ready for submission freeze.** New backend slugs are working and identity/stream contracts are tested. Migration 006 is validated on an isolated main clone but pending on main; public UI access, runtime overrides, fresh complete scenario acceptance, and actual overlapping concurrency tests remain open. No working public live-demo URL is asserted in this checkpoint.
+Architecture snapshot, thesis, failure-test evidence and a 90-second walkthrough script exist. **The required 90-second Loom recording is still missing.** A browser test recording/report is not represented as that Loom. Final submission freeze is therefore not claimed.
+
+The public seed agents keep their actual historical terminal states. Fresh testing uses independently created scoped fixtures without resetting those agents.

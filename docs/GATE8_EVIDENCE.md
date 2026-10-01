@@ -63,3 +63,4 @@ Phase 8 database/control-plane invariants are green. Public production is not ac
 - Vercel server-only environment variables are configured;
 - Vercel Authentication is disabled for the final production URL;
 - external acceptance re-runs Start All, approvals, Rogue/Kill/stale-worker, replay, usage, and audit export.
+Current acceptance is recorded in `docs/evidence/2026-10-01-acceptance.json`. This file retains earlier checkpoint evidence; its Vercel-era deployment gates are superseded by the published Sites path, applied migration 006, and fresh concurrency tests.
