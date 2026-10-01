@@ -1,0 +1,210 @@
+{
+  "recorded_at": "2026-10-01T02:20:11.687Z",
+  "challenge": "Agent Control Tower",
+  "deployment": {
+    "id": "appgdep_6abdc289ca0c8191b167bbd24b6f6290",
+    "project_id": "appgprj_6abc486150bc8191a53c0204525ce08d",
+    "title": "Agent Control Tower",
+    "version_id": "appgprj_6abc486150bc8191a53c0204525ce08d~appgver_5d6769df55b48191bea93523eb665663",
+    "type": "publish",
+    "status": "succeeded",
+    "url": "https://agent-control-tower.tadafuqai.chatgpt.site",
+    "has_mcp": false,
+    "screenshot_asset_pointer": "sediment://file_00000000dfe481f883611f9d44b72ee2",
+    "provider_deployment_id": "site---6abc486150bc8191a53c0204525ce08d",
+    "failure_message": null,
+    "env_set_revision": 1,
+    "updated_at": "2026-10-01T02:17:54.722811+00:00"
+  },
+  "saved_version": {
+    "id": "appgprj_6abc486150bc8191a53c0204525ce08d~appgver_5d6769df55b48191bea93523eb665663",
+    "version_number": 3,
+    "source": {
+      "commit_sha": "d16f61f4e46eb85f9f5c04f6b422305514be06b3"
+    },
+    "archive_storage": {
+      "archive_format": "tar",
+      "sediment_file_id": "file_0000000076b081fabee8a7a11e3f43b8",
+      "content_hash": "sha256:26893b788652f5cd63d85051e3788169d27c9b113aa0a13dea49ada3c4b6d4d2",
+      "size_bytes": 1198080,
+      "file_count": 63
+    }
+  },
+  "source": {
+    "sites_commit": "d16f61f4e46eb85f9f5c04f6b422305514be06b3",
+    "github_code_commit": "342cf3cf10e0d47aff3a13c40965c05e75f90d0b",
+    "github_evidence_commit": "a07d880fab86937ce7f030f5e14432376073f343"
+  },
+  "archive_gzip_sha256": "2dfdfe3be844c0709a63d04b2d0e289576c85a2137be5f24b6a284bbed8898fd",
+  "build": {
+    "workflow": "Sites site-workflow",
+    "result": "passed",
+    "worker": "dist/server/index.js",
+    "source_clean": true
+  },
+  "live_verification": {
+    "checked_at": "2026-10-01T02:19:20.523Z",
+    "api": {
+      "passed": true,
+      "workspace": "ws_demo",
+      "checked_at": "2026-10-01T02:17:50.472Z",
+      "checks": [
+        {
+          "name": "anonymous_backend_denied",
+          "passed": true
+        },
+        {
+          "name": "signed_fleet_from_postgres",
+          "passed": true
+        },
+        {
+          "name": "team_scope_team_operations",
+          "passed": true
+        },
+        {
+          "name": "team_scope_team_revenue",
+          "passed": true
+        },
+        {
+          "name": "approvals_query",
+          "passed": true
+        },
+        {
+          "name": "usage_query",
+          "passed": true
+        },
+        {
+          "name": "audit_json",
+          "passed": true
+        },
+        {
+          "name": "audit_csv",
+          "passed": true
+        },
+        {
+          "name": "structured_replay",
+          "passed": true
+        },
+        {
+          "name": "signed_sse_token_issued",
+          "passed": true
+        },
+        {
+          "name": "sse_other_workspace_denied",
+          "passed": true
+        },
+        {
+          "name": "sse_other_team_denied",
+          "passed": true
+        },
+        {
+          "name": "sse_tampered_token_denied",
+          "passed": true
+        },
+        {
+          "name": "sse_content_type",
+          "passed": true
+        },
+        {
+          "name": "sse_idle_heartbeat",
+          "passed": true
+        }
+      ]
+    },
+    "site_checks": [
+      {
+        "name": "live_html_and_simulated_usage_labels",
+        "passed": true
+      },
+      {
+        "name": "published_idempotent_notice",
+        "passed": true,
+        "evidence": {
+          "checked_at": "2026-10-01T02:19:20.523Z",
+          "status": 200,
+          "asset": "OperatorDashboard-CML2gA6h.js",
+          "published_component_matches_archive": true,
+          "published_idempotent_notice": true,
+          "browser_component_no_server_secrets": true,
+          "sha256": "8fa22aaa2e2c526871f312ebd7327c9393bf0c69a9e3ac1fdd147df177720d18"
+        }
+      },
+      {
+        "name": "browser_bundles_no_server_secret_symbols",
+        "passed": true
+      },
+      {
+        "name": "other_workspace_denied",
+        "passed": true,
+        "status": 403
+      },
+      {
+        "name": "other_team_denied",
+        "passed": true,
+        "status": 403
+      }
+    ],
+    "passed": true,
+    "component_matches_archive": {
+      "checked_at": "2026-10-01T02:19:20.523Z",
+      "status": 200,
+      "asset": "OperatorDashboard-CML2gA6h.js",
+      "published_component_matches_archive": true,
+      "published_idempotent_notice": true,
+      "browser_component_no_server_secrets": true,
+      "sha256": "8fa22aaa2e2c526871f312ebd7327c9393bf0c69a9e3ac1fdd147df177720d18"
+    }
+  },
+  "probe_correction": {
+    "initial_published_notice_probe_passed": false,
+    "reason": "The initial probe fetched script entrypoints but missed the module-preloaded OperatorDashboard component. Fetching the exact published component verified its content and byte hash against the archive."
+  },
+  "browser_artifact_scan": {
+    "javascript_files": 9,
+    "server_secret_symbol_matches": []
+  },
+  "main_guards": {
+    "tool_actions_authoritative_epoch_fence": "enabled",
+    "tool_actions_execution_guard": "enabled"
+  },
+  "temporary_verification_services": {
+    "removed": [
+      "actacceptance",
+      "actaccept4",
+      "actaccept5"
+    ],
+    "database_evidence_preserved": true
+  },
+  "recent_worker_errors": {
+    "since_minutes": 15,
+    "count": 0
+  },
+  "ci": [
+    {
+      "name": "validate",
+      "commit": "a07d880fab86937ce7f030f5e14432376073f343",
+      "run": 36805060765,
+      "conclusion": "success"
+    },
+    {
+      "name": "validate-sites",
+      "commit": "321678ddd03d511f452fc0c5975dcaab52d35df7",
+      "run": 36776218976,
+      "conclusion": "success"
+    },
+    {
+      "name": "package-sites-neon",
+      "commit": "342cf3cf10e0d47aff3a13c40965c05e75f90d0b",
+      "run": 36804693284,
+      "conclusion": "success"
+    }
+  ],
+  "acceptance_summary": {
+    "fresh_database_checks": 29,
+    "named_local_tests": 21,
+    "live_api_checks": 15,
+    "site_asset_scope_checks": 5,
+    "passed": true
+  },
+  "remaining_delivery": "Required 90-second Loom recording is missing; no final submission freeze is claimed."
+}
