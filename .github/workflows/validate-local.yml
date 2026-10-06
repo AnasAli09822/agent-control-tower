@@ -1,0 +1,38 @@
+name: validate-local-clean-clone
+on:
+  push:
+    branches: [sites-migration, main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  clean-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: local_ci_only
+          POSTGRES_DB: controltower
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:local_ci_only@127.0.0.1:5432/controltower
+      ACT_LOCAL_MODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install
+      - run: node scripts/local/bootstrap.mjs
+      - run: node --test tests/sites-workload.test.mjs tests/demo-session.test.mjs
+      - run: node tests/stepped-acceptance.mjs > stepped-acceptance.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: clean-clone-acceptance
+          path: stepped-acceptance.json

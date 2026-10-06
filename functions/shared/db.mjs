@@ -5,7 +5,7 @@ const databaseUrl = process.env.ACT_DATABASE_URL ?? process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error("DATABASE_URL is required");
 
 export const pool = new Pool({ connectionString: databaseUrl, max: 5 });
-attachDatabasePool(pool);
+if (process.env.ACT_LOCAL_MODE !== "1") attachDatabasePool(pool);
 
 export async function withTx(fn) {
   const client = await pool.connect();

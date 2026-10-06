@@ -1,3 +1,5 @@
+import { createDemoSession } from "../shared/demo-session.mjs";
+import { startSteppedDemo, startSteppedRogue } from "../shared/stepped-runtime.mjs";
 import {
   pool, withTx, appendEvent, appendAudit,
   json, errorResponse, readJson, requireApiKey, idempotencyKey, correlationId,
@@ -21,8 +23,12 @@ async function getFleet(url) {
   const { rows } = await pool.query(
     `select a.id, a.workspace_id, a.team_id, a.name, a.agent_type, a.current_status,
             a.drift_score, a.control_epoch, a.version, a.last_heartbeat_at,
-            task.id as current_task_id, task.title as current_task,
+            coalesce(latest_task.id,task.id) as current_task_id, coalesce(latest_task.title,task.title) as current_task,
             latest_run.id as current_run_id,
+            case when a.current_status='killed' then 'Killed permanently — start a new session'
+                 when a.current_status='paused' and a.drift_score>=85 then 'Critical drift — unsafe actions blocked'
+                 when a.current_status='paused' then 'Paused by operator'
+                 when a.current_status='waiting_approval' then 'Waiting for an operator decision' else null end as blocker,
             last_audit.action as last_action,
             usage.input_tokens, usage.output_tokens, usage.cached_tokens, usage.cost_usd
        from agents a
@@ -33,10 +39,11 @@ async function getFleet(url) {
           order by t.created_at desc limit 1
        ) task on true
        left join lateral (
-         select r.id from agent_runs r
+         select r.id,r.task_id from agent_runs r
           where r.workspace_id=a.workspace_id and r.team_id=a.team_id and r.agent_id=a.id
           order by r.created_at desc limit 1
        ) latest_run on true
+       left join tasks latest_task on latest_task.id=latest_run.task_id
        left join lateral (
          select au.action from audit_events au
           where au.workspace_id=a.workspace_id and au.agent_id=a.id
@@ -63,7 +70,7 @@ async function getApprovals(url) {
   if (teamId) { params.push(teamId); teamClause = `and team_id=$2`; }
   const { rows } = await pool.query(
     `select id, workspace_id, team_id, agent_id, run_id, task_id, action_type, reason, evidence_json,
-            risk_level, risk_score, estimated_impact_json, status, requested_at, decision_note, version
+            action_payload, risk_level, risk_score, estimated_impact_json, status, requested_at, decision_note, version
        from approvals where workspace_id=$1 ${teamClause}
       order by (status='pending') desc, requested_at desc limit 200`,
     params,
@@ -85,12 +92,20 @@ async function getUsage(url) {
        from usage_ledger where workspace_id=$1 ${teamClause}`,
     params,
   );
-  return json(rows[0]);
+  const grouped = await pool.query(`select t.id as task_id,t.title as task_title,t.status as task_status,a.id as agent_id,a.name as agent_name,t.team_id,
+    coalesce(sum(u.input_tokens),0)::bigint as input_tokens,coalesce(sum(u.output_tokens),0)::bigint as output_tokens,
+    coalesce(sum(u.cached_tokens),0)::bigint as cached_tokens,coalesce(sum(u.cost_usd),0)::numeric as cost_usd
+    from tasks t join agents a on a.id=t.assigned_agent_id
+    left join usage_ledger u on u.workspace_id=t.workspace_id and u.task_id=t.id and u.agent_id=a.id
+    where t.workspace_id=$1 ${teamId ? 'and t.team_id=$2' : ''}
+    group by t.id,a.id order by t.created_at,t.id`, params);
+  return json({...rows[0],by_task:grouped.rows,source:"simulated"});
 }
 
 async function getReplay(url, runId) {
   const { workspaceId, teamId } = queryScope(url);
-  const limit = Math.min(Math.max(Number(url.searchParams.get("limit") || 25), 1), 100);
+  const rawLimit = Number(url.searchParams.get("limit") || 25);
+  const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(Math.floor(rawLimit), 1), 100) : 25;
   const params = [workspaceId, runId];
   let teamClause = "";
   if (teamId) { params.push(teamId); teamClause = `and team_id=$3`; }
@@ -109,7 +124,8 @@ async function getReplay(url, runId) {
 
 async function getAudit(url) {
   const { workspaceId, teamId } = queryScope(url);
-  const limit = Math.min(Math.max(Number(url.searchParams.get("limit") || 200), 1), 1000);
+  const rawLimit = Number(url.searchParams.get("limit") || 200);
+  const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(Math.floor(rawLimit), 1), 1000) : 200;
   const params = [workspaceId];
   let teamClause = "";
   if (teamId) { params.push(teamId); teamClause = `and team_id=$2`; }
@@ -173,14 +189,14 @@ async function intervene(request, url, agentId, commandName) {
     const agent = agentResult.rows[0];
     const context = await activeContext(client, workspaceId, teamId, agentId);
 
-    const to = commandName === "resume" ? "running" : commandName === "pause" ? "paused" : "killed";
+    let to = commandName === "resume" ? "running" : commandName === "pause" ? "paused" : "killed";
     if (agent.current_status === to && commandName !== "kill") throw new Error(`conflict:already_${to}`);
     if (agent.current_status === "killed") throw new Error("conflict:agent_killed");
     await assertTransition(client, agent.current_status, to);
 
     if (commandName === "resume" && context.run_id) {
       const pending = await client.query(`select 1 from approvals where workspace_id=$1 and team_id=$2 and run_id=$3 and status='pending' limit 1`, [workspaceId, teamId, context.run_id]);
-      if (pending.rowCount) throw new Error("conflict:pending_approval");
+      if (pending.rowCount) to = "waiting_approval";
     }
 
     const oldEpoch = BigInt(agent.control_epoch);
@@ -191,6 +207,7 @@ async function intervene(request, url, agentId, commandName) {
       [to, newEpoch.toString(), workspaceId, teamId, agentId],
     );
     if (context.run_id) {
+      if (commandName === "resume" && to === "waiting_approval") await client.query("update agent_runs set status='running',version=version+1 where id=$1", [context.run_id]);
       await client.query(`update agent_runs set status=$1, control_epoch=$2, version=version+1, updated_at=now(), ended_at=case when $1='killed' then now() else ended_at end where id=$3`, [to, newEpoch.toString(), context.run_id]);
       await client.query(`update tasks set status=$1, version=version+1, completed_at=case when $1='killed' then now() else completed_at end where id=$2`, [to, context.task_id]);
       if (commandName === "kill") {
@@ -254,7 +271,8 @@ async function decideApproval(request, approvalId, decision) {
     // Match worker and intervention lock order: authoritative agent first.
     const identity = await client.query(`select agent_id from approvals where workspace_id=$1 and team_id=$2 and id=$3`, [workspaceId, teamId, approvalId]);
     if (!identity.rowCount) throw new Error("not_found:approval");
-    await client.query(`select id from agents where workspace_id=$1 and team_id=$2 and id=$3 for update`, [workspaceId, teamId, identity.rows[0].agent_id]);
+    const authoritative = await client.query(`select id,current_status from agents where workspace_id=$1 and team_id=$2 and id=$3 for update`, [workspaceId, teamId, identity.rows[0].agent_id]);
+    if (authoritative.rows[0]?.current_status === "paused") throw new Error("conflict:agent_paused_resume_before_decision");
     const result = await client.query(`select * from approvals where workspace_id=$1 and team_id=$2 and id=$3 for update`, [workspaceId, teamId, approvalId]);
     if (!result.rowCount) throw new Error("not_found:approval");
     const approval = result.rows[0];
@@ -279,6 +297,8 @@ async function runScenario(request, scenario) {
   const idem = idempotencyKey(request, body);
   if (!workspaceId || !operatorId || !idem) throw new Error("bad_request:workspace_operator_idempotency_required");
   const corr = correlationId(request);
+  const args = { workspaceId, operatorId, idempotencyKey: idem, correlationId: corr };
+  if (/^ws_demo_[a-f0-9]{32}$/.test(workspaceId)) return json(await (scenario === "start-all" ? startSteppedDemo(args) : startSteppedRogue(args)));
   const result = await withTx((client) => scenario === "start-all"
     ? startAllScenario(client, { workspaceId, operatorId, idempotencyKey: idem, correlationId: corr })
     : startRogueScenario(client, { workspaceId, operatorId, idempotencyKey: idem, correlationId: corr }));
@@ -309,6 +329,10 @@ export default {
       // Every non-health control-plane route is private. The Vercel server proxy
       // injects the shared key; browsers never receive it.
       requireApiKey(request);
+      if (request.method === "POST" && path === "/sessions") {
+        const body = await readJson(request);
+        return json(await createDemoSession(body.workspaceId ?? body.workspace_id));
+      }
       if (request.method === "GET" && path === "/fleet") return await getFleet(url);
       if (request.method === "GET" && path === "/approvals") return await getApprovals(url);
       if (request.method === "GET" && path === "/usage") return await getUsage(url);

@@ -1,3 +1,4 @@
+import { advanceWorkspace } from "../shared/stepped-runtime.mjs";
 import { pool, json, errorResponse } from "../shared/db.mjs";
 import { verifyStreamToken } from "../shared/stream-token.mjs";
 
@@ -65,6 +66,7 @@ export default {
           controller.enqueue(encoder.encode(`retry: 1500\n\n`));
           try {
             while (!request.signal.aborted) {
+              await advanceWorkspace(workspaceId);
               const rows = await readEvents(workspaceId, teamId, cursor, 100);
               for (const row of rows) {
                 cursor = Number(row.sequence);

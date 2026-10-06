@@ -1,8 +1,9 @@
+import { createHash } from "node:crypto";
 import { appendAudit, appendEvent } from "./db.mjs";
 
 const MODEL = "simulated-control-agent-v1";
 
-export const idPart = (value) => String(value ?? "").replace(/[^a-zA-Z0-9]/g, "").slice(-16) || "demo";
+export const idPart = (value) => createHash("sha256").update(String(value ?? "demo")).digest("hex").slice(0,24);
 export const toolId = (runId, stepNo) => `tool_${idPart(runId)}_${stepNo}`;
 export const approvalId = (runId, stepNo) => `approval_${idPart(runId)}_${stepNo}`;
 

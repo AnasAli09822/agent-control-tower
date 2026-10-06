@@ -1,3 +1,4 @@
+import { runSteppedAcceptance } from "../../tests/stepped-acceptance.mjs";
 // Temporary private verification service. It accepts no SQL, workspace or IDs
 // from the caller; every mutation belongs to a newly created test workspace.
 import { randomBytes, timingSafeEqual } from "node:crypto";
@@ -191,6 +192,10 @@ export default { async fetch(request) {
   if (Date.now()>Number(process.env.ACT_TEST_DEADLINE)||!equal(request.headers.get("x-test-key"),process.env.ACT_TEST_KEY)) return json({error:"unauthorized"},401);
   if (running) return json({error:"conflict:verification_running"},409);
   running=true;
-  try { const report=await suite();return json(report,report.passed?200:500); }
+  try {
+    const report=await suite();
+    if(report.passed){try{report.stepped=await runSteppedAcceptance();}catch(error){report.passed=false;report.steppedError={message:error.message,code:error.code};}}
+    return json(report,report.passed?200:500);
+  }
   finally { running=false; }
 }};

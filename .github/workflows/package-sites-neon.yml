@@ -1,8 +1,8 @@
 name: package-sites-neon
 on:
   push:
-    branches: [sites-migration]
-    paths: ['functions/**', 'tests/sites-workload.test.mjs', '.github/workflows/package-sites-neon.yml']
+    branches: [sites-migration, main]
+    paths: ['functions/**', 'tests/**', '.github/workflows/package-sites-neon.yml']
 permissions:
   contents: read
 jobs:
@@ -14,7 +14,7 @@ jobs:
         with:
           node-version: 24
       - run: npm install
-      - run: node --test tests/sites-workload.test.mjs
+      - run: node --test tests/sites-workload.test.mjs tests/demo-session.test.mjs
       - name: Bundle Sites-specific Neon services
         run: |
           set -euo pipefail
@@ -30,6 +30,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: sites-neon-function-bundles
-          path: dist/*sites.zip
+          path: dist/*.zip
           if-no-files-found: error
           retention-days: 14

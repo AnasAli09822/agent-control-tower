@@ -1,7 +1,9 @@
 import { appendAudit, appendEvent } from "./db.mjs";
 import { idPart, toolId, recordStep, executeTool } from "./scenario-runtime.mjs";
 
-async function recordBlockedProposal(client, ctx, spec) {
+export async function recordBlockedProposal(client, ctx, spec) {
+  if (deferred) return { taskId, runId, driftScore: 0, autoPaused: false, controlEpoch: String(agent.control_epoch), idempotent: false };
+
   const step = await recordStep(client, ctx, {
     goal: spec.goal, observation: spec.observation, evidence: spec.evidence,
     decisionSummary: spec.decisionSummary, policyResult: "block", intendedAction: spec.toolName,
@@ -17,7 +19,7 @@ async function recordBlockedProposal(client, ctx, spec) {
   await appendAudit(client, { workspaceId: ctx.workspaceId, teamId: ctx.teamId, actorType: "control_plane", actorId: "risk_gate", agentId: ctx.agentId, runId: ctx.runId, taskId: ctx.taskId, action: spec.toolName, targetType: "tool_action", targetId: id, decision: "block", riskScore: spec.riskScore, result: "prevented_before_execution", correlationId: ctx.correlationId });
 }
 
-export async function startRogueScenario(client, { workspaceId, operatorId, idempotencyKey, correlationId, agentId = "agent_infra", serviceId = "svc_public_api" }) {
+export async function startRogueScenario(client, { workspaceId, operatorId, idempotencyKey, correlationId, agentId = "agent_infra", serviceId = "svc_public_api", deferred = false }) {
   if (!workspaceId || !operatorId || !idempotencyKey) throw new Error("bad_request:workspace_operator_idempotency_required");
   const suffix = idPart(idempotencyKey);
   const taskId = `rogue_task_${suffix}`;
@@ -43,6 +45,8 @@ export async function startRogueScenario(client, { workspaceId, operatorId, idem
   await client.query(`update agents set current_status='running',drift_score=0,version=version+1,updated_at=now() where workspace_id=$1 and id=$2`, [workspaceId, agentId]);
   const ctx = { workspaceId, teamId, agentId, taskId, runId, controlEpoch: BigInt(agent.control_epoch), correlationId };
   await appendEvent(client, { ...ctx, eventType: "task.started", severity: "warning", correlationId, payload: { task_type: "rogue_infra" } });
+
+  if (deferred) return { taskId, runId, driftScore: 0, autoPaused: false, controlEpoch: String(agent.control_epoch), idempotent: false };
 
   const step = await recordStep(client, ctx, {
     goal: "Restore API health without unsafe production changes",

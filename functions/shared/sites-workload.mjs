@@ -1,3 +1,4 @@
+import { demoScope } from "./demo-scope.mjs";
 // Shared by the Sites Worker and Neon Functions. No platform-specific APIs.
 // Only servers receive the signing secret; the browser receives SSE tokens only.
 const encoder = new TextEncoder();
@@ -51,6 +52,9 @@ function exactAlias(body, camel, snake, expected, required = false) {
   if ((required && !values.length) || values.some((v) => v !== expected)) throw new Error("forbidden:demo_scope");
 }
 export async function assertDemoRequest(request, audience, workspaceId = "ws_demo") {
+  const scope = demoScope(workspaceId);
+  const teams = new Set(scope.teams.map(t => t.id));
+  const agents = new Set(Object.values(scope.agents));
   const url = new URL(request.url);
   const path = url.pathname.replace(/^\/+|\/+$/g, "");
   if (request.method === "GET") {
@@ -62,12 +66,12 @@ export async function assertDemoRequest(request, audience, workspaceId = "ws_dem
   }
   if (audience !== "control" || request.method !== "POST") throw new Error("forbidden:demo_route");
   const intervention = path.match(/^agents\/([A-Za-z0-9_-]+)\/(pause|resume|kill)$/);
-  if (!["scenarios/start-all", "scenarios/rogue-infra"].includes(path) && !(intervention && agents.has(intervention[1])) && !/^approvals\/[A-Za-z0-9_-]+\/(approve|reject)$/.test(path)) throw new Error("forbidden:demo_route");
+  if (!["sessions", "scenarios/start-all", "scenarios/rogue-infra"].includes(path) && !(intervention && agents.has(intervention[1])) && !/^approvals\/[A-Za-z0-9_-]+\/(approve|reject)$/.test(path)) throw new Error("forbidden:demo_route");
   let body;
   try { body = await request.clone().json(); } catch { throw new Error("bad_request:invalid_json"); }
   if (!body || typeof body !== "object" || Array.isArray(body)) throw new Error("bad_request:invalid_json");
   exactAlias(body, "workspaceId", "workspace_id", workspaceId, true);
-  exactAlias(body, "operatorId", "operator_id", "operator_demo");
+  exactAlias(body, "operatorId", "operator_id", scope.operatorId);
   const selectedTeams = [body.teamId, body.team_id].filter((v) => v != null && v !== "");
   if (selectedTeams.some((t) => !teams.has(t)) || new Set(selectedTeams).size > 1) throw new Error("forbidden:demo_scope");
 }
