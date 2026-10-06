@@ -115,8 +115,8 @@ async function getReplay(url, runId) {
             decision_summary, policy_result, intended_action, action_result, confidence,
             input_tokens, output_tokens, cached_tokens, cost_usd, duration_ms, created_at
        from reasoning_steps
-      where workspace_id=$1 and run_id=$2 ${teamClause}
-      order by step_no desc limit $${params.length}`,
+      where workspace_id=$1 and (run_id=$2 or agent_id=$2) ${teamClause}
+      order by created_at desc,id desc limit $${params.length}`,
     params,
   );
   return json({ steps: rows.reverse() });

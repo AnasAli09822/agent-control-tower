@@ -61,6 +61,8 @@ export async function runSteppedAcceptance(){
   check('rogue_auto_pauses_at_92_without_production_effect',contained.current_status==='paused'&&Number(contained.drift_score)===92&&infra.rate_limit_rps===1200,{contained,infra});
   const replay=await req(`/replay/${rogue.runId}?workspace_id=${s.workspaceId}&limit=2`);
   check('replay_last_n_steps_with_evidence',replay.body.steps.length===2&&replay.body.steps[0].step_no===2&&Array.isArray(replay.body.steps[0].evidence_json),replay.body);
+  const history=await req(`/replay/${s.agents.infra}?workspace_id=${s.workspaceId}&limit=20`);
+  check('agent_replay_includes_previous_task_and_current_rogue',history.body.steps.length===5&&new Set(history.body.steps.map(step=>step.run_id)).size===2);
   const kill=await req(`/agents/${s.agents.infra}/kill`,{teamId:s.teams[0].id});
   check('kill_invalidates_epoch_and_denies_stale_probe',kill.status===200&&kill.body.staleWorkerGuard?.blocked&&Number(kill.body.agent.control_epoch)===1,kill);
   const beforeKillSteps=await steps(s.agents.infra);await tick();

@@ -93,7 +93,7 @@ export function OperatorDashboard(){
   const openReplay=useCallback(async(agent:FleetAgent,limit:number)=>{
     setSelected(agent);
     if(!session||!agent.current_run_id){setSteps([]);return;}
-    try{const replay=await api.replay(session.workspaceId,agent.current_run_id,agent.team_id,limit);setSteps(replay.steps??[]);}
+    try{const replay=await api.replay(session.workspaceId,agent.id,agent.team_id,limit);setSteps(replay.steps??[]);}
     catch(e){setError(e instanceof Error?e.message:'Replay unavailable.');}
   },[session]);
   const names=useMemo(()=>new Map(agents.map(a=>[a.id,a.name])),[agents]);
@@ -118,7 +118,7 @@ export function OperatorDashboard(){
     <section className="metrics">
       <Metric label="Active agents" value={String(agents.filter(a=>['running','waiting_approval','paused'].includes(a.current_status)).length)}/>
       <Metric label="Pending approvals" value={String(approvals.length)}/>
-      <Metric label="Critical drift" value={String(agents.filter(a=>Number(a.drift_score)>=85).length)}/>
+      <Metric label="Critical drift" value={String(agents.filter(a=>Number(a.drift_score)>=85&&["running","paused","waiting_approval","blocked"].includes(a.current_status)).length)}/>
       <Metric label="Simulated tokens" value={Number(usage.total_tokens).toLocaleString()}/>
       <Metric label="Simulated cost" value={money(usage.total_cost_usd)}/>
     </section>
@@ -156,7 +156,7 @@ export function OperatorDashboard(){
       <div className="panel span3"><div className="panelHead"><h2>Usage by agent and task</h2><span>Simulated</span></div><div className="tableScroll"><table><thead><tr><th>Agent</th><th>Task</th><th>Status</th><th>Input tokens</th><th>Output tokens</th><th>Cached tokens</th><th>Cost</th></tr></thead><tbody>{usage.by_task.map(row=><tr key={row.task_id}><td>{row.agent_name}</td><td>{row.task_title}</td><td>{row.task_status.replaceAll('_',' ')}</td><td>{Number(row.input_tokens).toLocaleString()}</td><td>{Number(row.output_tokens).toLocaleString()}</td><td>{Number(row.cached_tokens).toLocaleString()}</td><td>{money(row.cost_usd)}</td></tr>)}</tbody></table></div></div>
       <div className="panel span3"><div className="panelHead"><h2>Live event stream</h2><span>{events.length} shown</span></div><div className="events">{events.map((event,i)=><div className="event" key={`${event.sequence}-${i}`}><time>{event.occurred_at?new Date(event.occurred_at).toLocaleTimeString():'—'}</time><b>{event.event_type}</b><span>{event.agent_id?names.get(event.agent_id)??event.agent_id:'System'}</span><span>{event.task_id?.startsWith('rogue')?'Rogue incident':usage.by_task.find(t=>t.task_id===event.task_id)?.task_title??''}</span></div>)}{!events.length&&<Empty text="Waiting for persisted events. Start agents to see their work."/>}</div></div>
       <div className="panel span3"><div className="panelHead"><h2>Reasoning replay</h2><div className="actions"><span>{selected?.name??'Select an agent'}</span><select aria-label="Replay step count" value={replayLimit} onChange={e=>{const n=Number(e.target.value);setReplayLimit(n);if(selected)void openReplay(selected,n);}}>{[5,10,20,50,100].map(n=><option key={n} value={n}>Last {n} steps</option>)}</select>{selected&&<button onClick={()=>void openReplay(selected,replayLimit)}>Refresh replay</button>}</div></div>
-        <div className="replay">{steps.map(step=><article className="replayStep" key={String(step.id)}><div className="stepNo">{step.step_no}</div><div><div className="row"><strong>{step.decision_summary}</strong><span className="policy">{step.policy_result}</span></div><p><b>Observation:</b> {step.observation}</p><p><b>Action:</b> {step.intended_action??'None'} · {step.action_result??'No result'}</p><small>{tokenCount(step.input_tokens,step.output_tokens).toLocaleString()} tokens · {money(step.cost_usd)} · {new Date(step.created_at).toLocaleTimeString()}</small><details><summary>Evidence</summary><pre>{JSON.stringify(step.evidence_json??[],null,2)}</pre></details></div></article>)}{!steps.length&&<Empty text={selected?'No steps recorded yet.':'Replay exposes structured operational summaries, evidence and decisions.'}/>}</div>
+        <div className="replay">{steps.map(step=><article className="replayStep" key={String(step.id)}><div className="stepNo">{step.step_no}</div><div><div className="row"><strong>{step.decision_summary}</strong><span className="policy">{step.policy_result}</span></div><p><b>Task:</b> {usage.by_task.find(t=>t.task_id===step.task_id)?.task_title??"Task"}</p><p><b>Observation:</b> {step.observation}</p><p><b>Action:</b> {step.intended_action??'None'} · {step.action_result??'No result'}</p><small>{tokenCount(step.input_tokens,step.output_tokens).toLocaleString()} tokens · {money(step.cost_usd)} · {new Date(step.created_at).toLocaleTimeString()}</small><details><summary>Evidence</summary><pre>{JSON.stringify(step.evidence_json??[],null,2)}</pre></details></div></article>)}{!steps.length&&<Empty text={selected?'No steps recorded yet.':'Replay exposes structured operational summaries, evidence and decisions.'}/>}</div>
       </div>
     </section>
   </main>;
