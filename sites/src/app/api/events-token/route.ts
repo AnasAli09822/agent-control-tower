@@ -1,16 +1,16 @@
+import { sessionScope } from "@/server/demo-session";
 import { authorizeNeon, settings } from "@/server/neon-identity";
 import { NextRequest } from "next/server";
 
-const demoWorkspaceId = process.env.DEMO_WORKSPACE_ID ?? "ws_demo";
-const allowedTeams = new Set(["team_operations", "team_revenue"]);
-
 export async function GET(request: NextRequest) {
+  let scope;
+  try { scope=await sessionScope(request); } catch { return Response.json({error:"demo_session_expired"},{status:401}); }
   const workspaceId = request.nextUrl.searchParams.get("workspace_id");
   const teamId = request.nextUrl.searchParams.get("team_id");
   const rawAfter = Number(request.nextUrl.searchParams.get("after_sequence") ?? "0");
   const afterSequence = Number.isSafeInteger(rawAfter) && rawAfter >= 0 ? rawAfter : 0;
-  if (workspaceId !== demoWorkspaceId) return Response.json({ error: "demo_scope_forbidden" }, { status: 403 });
-  if (teamId && !allowedTeams.has(teamId)) return Response.json({ error: "demo_scope_forbidden" }, { status: 403 });
+  if (!workspaceId || workspaceId !== scope.workspaceId) return Response.json({ error: "demo_scope_forbidden" }, { status: 403 });
+  if (teamId && !scope.teams.some((t: {id:string}) => t.id === teamId)) return Response.json({ error: "demo_scope_forbidden" }, { status: 403 });
 
   const eventsBase = settings().EVENTS_API_URL;
   if (!eventsBase) return Response.json({ error: "event_stream_identity_not_configured" }, { status: 503 });
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   tokenEndpoint.searchParams.set("workspace_id", workspaceId);
   if (teamId) tokenEndpoint.searchParams.set("team_id", teamId);
   let authenticated: Request;
-  try { authenticated = await authorizeNeon(new Request(tokenEndpoint), "events"); }
+  try { authenticated = await authorizeNeon(new Request(tokenEndpoint), "events", scope.workspaceId); }
   catch { return Response.json({ error: "event_stream_identity_not_configured" }, { status: 503 }); }
   const issued = await fetch(authenticated, { cache: "no-store" });
   if (!issued.ok) {

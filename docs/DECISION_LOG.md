@@ -27,3 +27,15 @@ Accepted 2026-09-22. The public Vercel proxy may act only on the canonical demo 
 
 ## ACT-DEC-009 — Declarative exact execution binding
 Accepted 2026-09-22. Migration 005 adds deferrable composite foreign keys that bind every ToolAction to its exact run scope and, at execution/success states, to the approved workspace/team/agent/run/task/tool/payload-hash/risk-score/status tuple. This provides post-generation enforcement independent of BEFORE-trigger generated-column timing and can protect main even before migration 004 is applied.
+
+## ACT-DEC-010 — Sites production delivery
+Accepted 2026-10-07. Sites replaces Vercel as the current frontend/proxy host; Neon remains the control/event/data host. The former Vercel decision is historical.
+
+## ACT-DEC-011 — Independent visitor sessions
+Accepted 2026-10-07. A signed HttpOnly cookie selects a new persisted workspace per browser session. New session creates new agents; it never revives a killed agent or overwrites old audit evidence.
+
+## ACT-DEC-012 — Observable checkpoint simulation
+Accepted 2026-10-07. Each simulator step commits separately. Signed SSE connections advance due server checkpoints at five-second intervals. Multiple viewers share row locks and timing state. Without an operator connection, the demo stops at the last checkpoint. Unattended scheduling is out of scope.
+
+## ACT-DEC-013 — Approval after pause
+Accepted 2026-10-07. A paused agent cannot execute an approval. Resume restores waiting_approval when a pending decision exists, so the operator can decide without bypassing the gate or becoming stuck.

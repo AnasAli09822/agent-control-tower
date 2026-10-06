@@ -29,10 +29,24 @@ jobs:
         with:
           node-version: 24
       - run: npm install
+      - run: npm --prefix sites ci
       - run: node scripts/local/bootstrap.mjs
       - run: node --test tests/sites-workload.test.mjs tests/demo-session.test.mjs
       - run: node tests/stepped-acceptance.mjs | tee stepped-acceptance.json
+      - name: Run local frontend and signed backend flow
+        run: |
+          npm run demo > local-demo.log 2>&1 &
+          demo_pid=$!
+          trap 'kill "$demo_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 40); do
+            if curl -fsS http://localhost:5173/ > /dev/null; then break; fi
+            sleep 1
+          done
+          node scripts/local/smoke.mjs | tee local-smoke.json
       - uses: actions/upload-artifact@v4
         with:
           name: clean-clone-acceptance
-          path: stepped-acceptance.json
+          path: |
+            stepped-acceptance.json
+            local-smoke.json
+            local-demo.log

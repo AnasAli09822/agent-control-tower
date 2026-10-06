@@ -82,7 +82,7 @@ export async function runSteppedAcceptance(){
   check('invalid_replay_limit_is_handled',(await req(`/replay/${rogue.runId}?workspace_id=${s.workspaceId}&limit=invalid`)).status===200);
   report.passed=true;report.completedAt=new Date().toISOString();return report;
 }
-if(process.argv[1]===new URL(import.meta.url).pathname){
+if(process.env.ACT_LOCAL_MODE==='1'&&process.argv[1]===new URL(import.meta.url).pathname){
   process.env.CONTROL_API_KEY='local-acceptance-only-key';
   try{console.log(JSON.stringify(await runSteppedAcceptance(),null,2));}finally{await pool.end();}
 }

@@ -2,23 +2,21 @@
 
 ```mermaid
 flowchart TD
- UI["Operator dashboard — Sites"] --> Proxy["Scoped server proxy"]
- Proxy --> Control["Neon control API — actctlsites"]
- Proxy --> Token["Neon signed-token endpoint"]
- Token --> UI
- UI --> SSE["Direct SSE — actevtsites"]
- Control --> Guard["Agent epoch and exact approval guards"]
- Guard --> DB["Neon Postgres"]
- SSE --> DB
- Guard --> Systems["CRM, Support, Infra simulators"]
+ Agents["Infra / Support / Sales simulators"] --> Control["Control plane: policy, approvals, epochs"]
+ Control --> DB["Neon PostgreSQL: state, events, audit, usage"]
+ DB --> Stream["Neon signed SSE"]
+ Stream --> UI["Operator UI · Sites"]
+ UI --> Proxy["Sites proxy · signed session scope"]
+ Proxy --> Control
+ Stream -->|"Due checkpoint"| Agents
 ```
 
-Sites compiles the App Router through Vinext into a Cloudflare Worker. It uses HTTP to Neon; no direct PostgreSQL TCP connection runs in Sites. The control plane owns registry, execution, policy/risk gates, approvals, drift, usage and audit. Durable state and append-only evidence live in Neon.
+The control plane executes a single simulator step in its own transaction. The next step is due after five seconds. An open signed SSE connection drives due checkpoints on the server and sends committed events to the UI. Multiple viewer connections share the same authoritative PostgreSQL state and locks; they cannot duplicate a step. With no viewer, the demo remains at its last persisted checkpoint. Approval waits, pause and kill are persisted control states, not browser timer state.
 
-The Site signs upstream requests for 30 seconds with an HMAC secret held only in server runtime. Claims bind the exact Site, audience, workspace, method, query, body digest and idempotency key. Neon validates that signature and independently enforces the canonical demo scope. The event secret remains exclusively in Neon; the browser receives only a scoped 120-second SSE token. Existing Vercel OIDC services are retained as a fallback.
+Each public visitor has a separate workspace, two teams, one operator and three agents. A server-signed HttpOnly session cookie selects that scope. A new session creates new identities; refreshing reuses the current session. Existing terminal agents and append-only audit records are preserved.
 
-Migration 005 binds each execution to its exact workspace/team/agent/run/task and approved action/payload/risk. Migration 006, applied to main on 2026-09-30, checks and locks the authoritative agent first and run second until mutation commit. Operator controls and approval resolution use the same agent-first lock order.
+Sites uses HTTP to Neon, with no PostgreSQL TCP sockets inside the hosted Worker. Its 30-second HMAC binds the Site, audience, workspace, method, path/query, body digest and idempotency header. Neon independently validates demo identity and agent/team scope. The browser receives a 120-second exact-scope SSE token and refreshes it before expiry, resuming from the last event sequence.
 
-Real concurrency evidence shows kill waits for an already guarded worker transaction, then rejects later stale execution. A queued approval behind kill rereads its cancelled gate and returns 409 without applying the discount. Evidence is in `docs/evidence/2026-10-01-acceptance.json`.
+Migration 005 binds execution to the exact approved workspace/team/agent/run/task/tool/payload/risk tuple. Applied migration 006 checks and locks the authoritative agent first, then its run, through mutation commit. Starts, step execution, intervention and approval resolution follow that order. Pause prevents new steps; kill advances the epoch and is terminal. An atomic action already holding the lock can commit before a waiting kill, and all later stale actions are rejected.
 
-Replay stores structured operational summaries and references, not hidden chain-of-thought. External business systems and metered agent outputs are simulated. Workspace-scoped event sequences support resume cursors, heartbeat and reconnect.
+Replay returns the last N structured reasoning summaries with evidence and usage. Usage totals reconcile with per-agent/per-task ledger entries. CSV and JSON audit exports support workspace and team scope. External business systems, reasoning and usage are simulated and labelled.

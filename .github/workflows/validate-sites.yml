@@ -1,7 +1,7 @@
 name: validate-sites
 on:
   push:
-    branches: [sites-migration]
+    branches: [sites-migration, main]
     paths: ['sites/**', '.github/workflows/validate-sites.yml']
 permissions:
   contents: read

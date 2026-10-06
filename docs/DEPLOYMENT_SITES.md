@@ -1,13 +1,11 @@
 # Sites deployment
 
-Live URL: https://agent-control-tower.tadafuqai.chatgpt.site
+Production frontend: https://agent-control-tower.tadafuqai.chatgpt.site
 
-Sites serves the React App Router dashboard and server proxy as a Vinext Cloudflare Worker. Neon retains PostgreSQL, scenarios, control guards and direct SSE. Sites does not open TCP database sockets.
+Sites runs the App Router through Vinext as a Cloudflare Worker. Runtime values are managed as Site environment variables, not committed source. Required bindings are ACT_SITE_ID, ACT_WORKLOAD_SECRET, CONTROL_API_URL and EVENTS_API_URL. The same workload secret and Site ID are configured on the Neon control/event Functions; EVENT_STREAM_SECRET stays exclusively in Neon. No credentials are sent to the browser.
 
-`ACT_WORKLOAD_SECRET` is a server runtime secret. Its 30-second signatures bind the Site, audience, workspace, method, query, body and idempotency key. Neon validates signature and demo scope independently. `EVENT_STREAM_SECRET` stays exclusively in Neon; browsers receive scoped 120-second SSE tokens. Runtime secret values never enter source or browser bundles. Vercel OIDC services remain a fallback.
+The backend bundles are produced from root `functions/` by `package-sites-neon`. The frontend is built from `sites/`. The native Sites workflow pushes the exact source and packages matching Worker output; native save/deploy operations publish that archive. Preserve the existing project identity and public audience.
 
-Migration 006 is applied to main with explicit approval. Fresh normal, approval, rejection, rogue and actual overlapping concurrency checks passed. The read-only live verification route tests fleet, scopes, usage, replay, exports, signed tokens and SSE. The public demo remains in its real historical state after terminal kills.
+Production already contains migrations 001, 002, 003, 005 and 006. No production schema change is required for independent demo sessions or paced execution. Never apply the clean bootstrap to an existing database. The bootstrap's identity defaults repair fresh-database reproducibility only; production retains its existing ID sequences.
 
-Preserve the existing `.openai/hosting.json` project identity and audience. Run the Sites workflow in the selected checkout to perform checks/build, push source and package matching Worker output. Save and deploy the matching version through native Sites tools. Scenario mutations never run during build or publish.
-
-Current acceptance and final publication evidence: `docs/evidence/2026-10-01-acceptance.json`. The 90-second Loom remains a separate unfinished delivery item.
+Acceptance includes fresh normal/approval/rejection flows, paused approvals, task-level usage, multiple viewers, rogue containment, terminal kill, signed scopes and a clean PostgreSQL bootstrap. The optional video is excluded by request.

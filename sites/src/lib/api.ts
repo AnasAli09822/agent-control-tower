@@ -25,6 +25,9 @@ export type Approval = {
   risk_score: number | string;
   status: string;
   requested_at: string;
+  task_id: string;
+  action_payload: Record<string, unknown>;
+  estimated_impact_json: Record<string, unknown>;
 };
 
 
@@ -38,11 +41,17 @@ export type ReplayStep = {
   intended_action?: string | null;
   action_result?: string | null;
   confidence?: number | string | null;
+  evidence_json?: Record<string, unknown>[];
+  task_id: string;
   input_tokens: number | string;
   output_tokens: number | string;
   cost_usd: number | string;
   created_at: string;
 };
+
+export type DemoSession = {workspaceId:string;operatorId:string;teams:{id:string;name:string}[];agents:{infra:string;support:string;sales:string}};
+export type TaskUsage = {task_id:string;task_title:string;task_status:string;agent_id:string;agent_name:string;team_id:string;input_tokens:number|string;output_tokens:number|string;cached_tokens:number|string;cost_usd:number|string};
+export type UsageSummary = {total_tokens:number|string;total_cost_usd:number|string;by_task:TaskUsage[]};
 
 const controlBase = "/api/control";
 
@@ -53,12 +62,17 @@ async function readJson<T>(url: string): Promise<T> {
 }
 
 export const api = {
+  session: async (fresh=false) => {
+    const response=await fetch("/api/session", {method:fresh?"POST":"GET",cache:"no-store"});
+    if(!response.ok) throw new Error("Unable to initialize demo session. Try again.");
+    return response.json() as Promise<DemoSession>;
+  },
   fleet: (workspaceId: string, teamId?: string) =>
     readJson<{ agents: FleetAgent[] }>(`${controlBase}/fleet?workspace_id=${encodeURIComponent(workspaceId)}${teamId ? `&team_id=${encodeURIComponent(teamId)}` : ""}`),
   approvals: (workspaceId: string, teamId?: string) =>
     readJson<{ approvals: Approval[] }>(`${controlBase}/approvals?workspace_id=${encodeURIComponent(workspaceId)}${teamId ? `&team_id=${encodeURIComponent(teamId)}` : ""}`),
   usage: (workspaceId: string, teamId?: string) =>
-    readJson<{ total_cost_usd: number | string; total_tokens: number | string }>(`${controlBase}/usage?workspace_id=${encodeURIComponent(workspaceId)}${teamId ? `&team_id=${encodeURIComponent(teamId)}` : ""}`),
+    readJson<UsageSummary>(`${controlBase}/usage?workspace_id=${encodeURIComponent(workspaceId)}${teamId ? `&team_id=${encodeURIComponent(teamId)}` : ""}`),
   replay: (workspaceId: string, runId: string, teamId?: string, limit = 20) =>
     readJson<{ steps: ReplayStep[] }>(`${controlBase}/replay/${encodeURIComponent(runId)}?workspace_id=${encodeURIComponent(workspaceId)}${teamId ? `&team_id=${encodeURIComponent(teamId)}` : ""}&limit=${limit}`),
   auditUrl: (workspaceId: string, format: "csv" | "json", teamId?: string) =>

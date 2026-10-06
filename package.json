@@ -3,17 +3,21 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "postbuild": "node scripts/backend-smoke.mjs",
+    "dev": "node scripts/local/demo.mjs",
+    "build": "npm --prefix sites run build",
     "start": "next start",
     "acceptance:external": "node scripts/vercel-acceptance.mjs",
     "typecheck:core": "tsc -p tsconfig.core.json --noEmit",
     "test:core": "node --experimental-strip-types --test tests/core.test.ts",
-    "test:security": "node --test tests/stream-token.test.mjs tests/vercel-oidc.test.mjs",
+    "test:security": "node --test tests/stream-token.test.mjs tests/vercel-oidc.test.mjs tests/sites-workload.test.mjs tests/demo-session.test.mjs",
     "typecheck:ui-contract": "tsc -p tsconfig.ui-check.json --noEmit",
     "check:functions": "node --check functions/actcontrol/index.mjs && node --check functions/actcontrol/handler.mjs && node --check functions/actevents/index.mjs && node --check functions/actevents/handler.mjs && node --check functions/shared/db.mjs && node --check functions/shared/scenarios.mjs && node --check functions/shared/scenario-runtime.mjs && node --check functions/shared/scenario-normal.mjs && node --check functions/shared/scenario-rogue.mjs && node --check functions/shared/scenario-approval.mjs && node --check functions/shared/stream-token.mjs && node --check functions/shared/vercel-oidc.mjs",
-    "validate:source": "npm run test:core && npm run test:security && npm run typecheck:core && npm run typecheck:ui-contract && npm run check:functions"
+    "validate:source": "npm run test:core && npm run test:security && npm run typecheck:core && npm run typecheck:ui-contract && npm run check:functions",
+    "dev:legacy": "next dev",
+    "build:legacy": "next build",
+    "demo": "node scripts/local/demo.mjs",
+    "db:bootstrap": "node scripts/local/bootstrap.mjs",
+    "acceptance:local": "node scripts/local/acceptance.mjs"
   },
   "dependencies": {
     "@neon/functions": "^0.8.0",
@@ -32,5 +36,8 @@
     "@types/react-dom": "^19.0.0",
     "typescript": "^5.8.0"
   },
-  "type": "module"
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  }
 }
