@@ -2,8 +2,6 @@ import { appendAudit, appendEvent } from "./db.mjs";
 import { idPart, toolId, recordStep, executeTool } from "./scenario-runtime.mjs";
 
 export async function recordBlockedProposal(client, ctx, spec) {
-  if (deferred) return { taskId, runId, driftScore: 0, autoPaused: false, controlEpoch: String(agent.control_epoch), idempotent: false };
-
   const step = await recordStep(client, ctx, {
     goal: spec.goal, observation: spec.observation, evidence: spec.evidence,
     decisionSummary: spec.decisionSummary, policyResult: "block", intendedAction: spec.toolName,

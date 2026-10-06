@@ -16,7 +16,7 @@ jobs:
           POSTGRES_DB: controltower
         ports: ['5432:5432']
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -31,7 +31,7 @@ jobs:
       - run: npm install
       - run: node scripts/local/bootstrap.mjs
       - run: node --test tests/sites-workload.test.mjs tests/demo-session.test.mjs
-      - run: node tests/stepped-acceptance.mjs > stepped-acceptance.json
+      - run: node tests/stepped-acceptance.mjs | tee stepped-acceptance.json
       - uses: actions/upload-artifact@v4
         with:
           name: clean-clone-acceptance
