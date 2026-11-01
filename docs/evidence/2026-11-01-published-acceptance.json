@@ -1,0 +1,122 @@
+{
+  "passed": true,
+  "completedAt": "2026-11-01T20:55:17.094Z",
+  "base": "https://agent-control-tower.tadafuqai.chatgpt.site",
+  "workspace": "ws_demo_4710c1ded3344b58b9782b2fd49a8ad9",
+  "checks": [
+    {
+      "name": "fresh_three_idle_agents",
+      "passed": true,
+      "evidence": {
+        "workspace": "ws_demo_4710c1ded3344b58b9782b2fd49a8ad9"
+      }
+    },
+    {
+      "name": "pause_in_flight_freezes_usage",
+      "passed": true
+    },
+    {
+      "name": "resume_in_flight",
+      "passed": true
+    },
+    {
+      "name": "exact_approval_payloads",
+      "passed": true,
+      "evidence": {
+        "credit": {
+          "ticket_id": "ticket_103_4710c1ded3344b58b9782b2fd49a8ad9",
+          "amount_usd": 350
+        },
+        "discount": {
+          "lead_id": "lead_meridian_4710c1ded3344b58b9782b2fd49a8ad9",
+          "discount_pct": 15
+        }
+      }
+    },
+    {
+      "name": "paused_approval_rejected",
+      "passed": true
+    },
+    {
+      "name": "resume_restores_pending_approval",
+      "passed": true
+    },
+    {
+      "name": "approve_credit_reject_discount_clears_queue",
+      "passed": true
+    },
+    {
+      "name": "rogue_auto_paused_92",
+      "passed": true,
+      "evidence": {
+        "agent": "agent_infra_4710c1ded3344b58b9782b2fd49a8ad9",
+        "drift": "92.00"
+      }
+    },
+    {
+      "name": "last_five_history_contains_two_blocked_actions",
+      "passed": true,
+      "evidence": {
+        "steps": [
+          {
+            "step": 1,
+            "task": "task_infra_seed_4710c1ded3344b58b9782b2fd49a8ad9",
+            "policy": "allow"
+          },
+          {
+            "step": 2,
+            "task": "task_infra_seed_4710c1ded3344b58b9782b2fd49a8ad9",
+            "policy": "allow"
+          },
+          {
+            "step": 1,
+            "task": "rogue_task_3f3a260089cec747721c6a81",
+            "policy": "allow"
+          },
+          {
+            "step": 2,
+            "task": "rogue_task_3f3a260089cec747721c6a81",
+            "policy": "block"
+          },
+          {
+            "step": 3,
+            "task": "rogue_task_3f3a260089cec747721c6a81",
+            "policy": "block"
+          }
+        ]
+      }
+    },
+    {
+      "name": "terminal_kill_epoch_fence",
+      "passed": true,
+      "evidence": {
+        "epoch": "1"
+      }
+    },
+    {
+      "name": "team_filters_two_and_one",
+      "passed": true
+    },
+    {
+      "name": "per_task_cost_reconciles",
+      "passed": true,
+      "evidence": {
+        "tasks": 4,
+        "tokens": "11520",
+        "cost": "0.03852000"
+      }
+    },
+    {
+      "name": "audit_json_csv_contains_interventions",
+      "passed": true
+    },
+    {
+      "name": "new_session_fresh_isolated_persistent",
+      "passed": true,
+      "evidence": {
+        "workspace": "ws_demo_18397db82327446a821afe0155c1034e"
+      }
+    }
+  ],
+  "streamedEvents": 63
+}

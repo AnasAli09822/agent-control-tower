@@ -1,0 +1,199 @@
+{
+  "challenge": "The Agent Control Tower",
+  "reviewedAt": "2026-11-01T20:55:17.094Z",
+  "implementation": {
+    "githubCommit": "8f9760d7720845ea084674d13154654077857a54",
+    "siteSource": "18afd4d8779a4fd4af40a524d08494b8e87a4151",
+    "frontendFiles": 46,
+    "frontendHashMatches": 46,
+    "excludedNativeFiles": [
+      "Unused Sites D1 starter db/index.ts and db/schema.ts; no application imports."
+    ],
+    "nativeSourceComparison": {
+      "compared": 61,
+      "matched": 59,
+      "excludedUnusedStarterFiles": 2
+    }
+  },
+  "site": {
+    "projectId": "appgprj_6abc486150bc8191a53c0204525ce08d",
+    "version": 4,
+    "versionId": "appgprj_6abc486150bc8191a53c0204525ce08d~appgver_3274ab665ee4819185eeb84023012709",
+    "sourceCommit": "18afd4d8779a4fd4af40a524d08494b8e87a4151",
+    "archiveHash": "sha256:c69125eb3f710703f1300010b8af3586d447aa99e0c2522ad437292659e83485",
+    "deployment": {
+      "id": "appgdep_6ac57eceb19c81918ee41e592a0ed226",
+      "project_id": "appgprj_6abc486150bc8191a53c0204525ce08d",
+      "title": "Agent Control Tower",
+      "version_id": "appgprj_6abc486150bc8191a53c0204525ce08d~appgver_3274ab665ee4819185eeb84023012709",
+      "type": "publish",
+      "status": "succeeded",
+      "url": "https://agent-control-tower.tadafuqai.chatgpt.site",
+      "has_mcp": false,
+      "screenshot_asset_pointer": "sediment://file_000000002e748230849f82a57f8f71a6",
+      "provider_deployment_id": "site---6abc486150bc8191a53c0204525ce08d",
+      "failure_message": null,
+      "env_set_revision": 1,
+      "updated_at": "2026-10-06T23:07:03.704320+00:00"
+    }
+  },
+  "neon": {
+    "projectId": "weathered-poetry-97205616",
+    "branchId": "br-gentle-butterfly-b57bd2r5",
+    "database": "controltower",
+    "controlDeployment": 6,
+    "eventsDeployment": 2,
+    "temporaryAcceptanceFunction": "Confirmed absent (404) on 2026-11-01",
+    "newProductionMigration": "None; previously applied 006 retained"
+  },
+  "tests": {
+    "freshUnitChecks": 25,
+    "publishedAcceptance": {
+      "passed": true,
+      "checks": 14,
+      "streamedEvents": 63,
+      "report": "2026-11-01-published-acceptance.json"
+    },
+    "publishedReadOnly": {
+      "httpStatus": 200,
+      "passed": true,
+      "workspace": "ws_demo",
+      "checked_at": "2026-11-01T20:54:58.639Z",
+      "checks": [
+        {
+          "name": "anonymous_backend_denied",
+          "passed": true
+        },
+        {
+          "name": "signed_fleet_from_postgres",
+          "passed": true
+        },
+        {
+          "name": "team_scope_team_operations",
+          "passed": true
+        },
+        {
+          "name": "team_scope_team_revenue",
+          "passed": true
+        },
+        {
+          "name": "approvals_query",
+          "passed": true
+        },
+        {
+          "name": "usage_query",
+          "passed": true
+        },
+        {
+          "name": "audit_json",
+          "passed": true
+        },
+        {
+          "name": "audit_csv",
+          "passed": true
+        },
+        {
+          "name": "structured_replay",
+          "passed": true
+        },
+        {
+          "name": "signed_sse_token_issued",
+          "passed": true
+        },
+        {
+          "name": "sse_other_workspace_denied",
+          "passed": true
+        },
+        {
+          "name": "sse_other_team_denied",
+          "passed": true
+        },
+        {
+          "name": "sse_tampered_token_denied",
+          "passed": true
+        },
+        {
+          "name": "sse_content_type",
+          "passed": true
+        },
+        {
+          "name": "sse_idle_heartbeat",
+          "passed": true
+        }
+      ]
+    },
+    "previousNeonAcceptance": {
+      "executedAt": "2026-10-06T23:02:27.339Z",
+      "legacyChecks": 29,
+      "steppedChecks": 28,
+      "passed": true,
+      "report": "2026-10-07-neon-acceptance.json",
+      "notRerunToday": true
+    },
+    "implementationCI": [
+      {
+        "id": 37544094677,
+        "name": "package-sites-neon",
+        "sha": "8f9760d7720845ea084674d13154654077857a54",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/AnasAli09822/agent-control-tower/actions/runs/37544094677"
+      },
+      {
+        "id": 37544094673,
+        "name": "validate-sites",
+        "sha": "8f9760d7720845ea084674d13154654077857a54",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/AnasAli09822/agent-control-tower/actions/runs/37544094673"
+      },
+      {
+        "id": 37544094674,
+        "name": "validate",
+        "sha": "8f9760d7720845ea084674d13154654077857a54",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/AnasAli09822/agent-control-tower/actions/runs/37544094674"
+      },
+      {
+        "id": 37544094627,
+        "name": "validate-local-clean-clone",
+        "sha": "8f9760d7720845ea084674d13154654077857a54",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/AnasAli09822/agent-control-tower/actions/runs/37544094627"
+      }
+    ]
+  },
+  "browser": {
+    "runId": "30eb067e-21cb-481c-bf34-b831c31ce421",
+    "completed": true,
+    "steps": 77,
+    "observed": [
+      "Start three agents",
+      "Pause with disabled approval controls",
+      "Resume and approve",
+      "Rogue reaches drift 92 and pauses with two blocked proposals",
+      "Replay and Last 5 selector with evidence",
+      "Kill and no new action after six seconds"
+    ],
+    "limits": [
+      "Browser agent approved both actions; it did not perform the requested discount rejection.",
+      "Team option IDs were recorded; actual browser filter counts were not conclusively recorded."
+    ],
+    "coverageOfLimits": "Actual rejection and exact 2/1 filter counts pass in the fresh published HTTP acceptance; no browser pass is claimed for skipped actions."
+  },
+  "thesis": {
+    "bodyWords": 200,
+    "limit": 300,
+    "file": "../TWO_YEAR_THESIS.md"
+  },
+  "scope": {
+    "video": "Optional; omitted by user request",
+    "agentsDomainsReasoningUsage": "Deterministic simulations, explicitly labelled",
+    "controlEffectsEventsAudit": "Real persisted application behavior",
+    "scheduling": "Advances on the server only while a signed operator SSE connection is open",
+    "enterpriseTenantAuth": "Out of scope; demo visitor scopes are isolated"
+  },
+  "deliveryNotes": "Documentation and the opt-in published acceptance CLI are finalized after the application code. Main will be fast-forwarded without rewriting history."
+}

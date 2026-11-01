@@ -1,26 +1,19 @@
 # Project status — Agent Control Tower
 
-Status date: 2026-10-01, Asia/Aden. The application is published through Sites. Technical acceptance has passed; final submission remains open for the required 90-second Loom recording.
+Reviewed 2026-11-01. Sites hosts the public operator UI and signed proxy. Neon provides authoritative state, control and signed SSE. Video is optional and omitted at the user's request.
 
-| Area | Current result | Evidence |
-|---|---|---|
-| Data and control | Passed | Main Neon contains 001, 002, 003, 005 and approved 006 |
-| Execution guards | Passed | Authoritative state/epoch fence and exact approval binding |
-| Three agents | Passed on fresh fixtures | 3 new runs, safe domain effects, 2 approval gates |
-| Approvals | Passed | Exact credit once, duplicate 409, rejected discount unchanged, substitutions denied |
-| Rogue and controls | Passed | Drift 92, 2 blocked proposals, auto-pause, resume/pause/kill, terminal state |
-| Concurrent execution | Passed | Physical PostgreSQL lock evidence for worker/kill and approval/kill |
-| Events, teams, export | Passed | Persisted sequence, scoped reads, signed SSE and audit JSON/CSV |
-| Sites operator UI | Published | Existing browser observations verified; final copy corrects idempotent status and labels simulated usage |
-| Source and checks | Passed | 21 named tests, TypeScript, GitHub validation; deployment build recorded in final evidence |
-| Submission recording | Missing | 90-second script exists; no recorded Loom is claimed |
+The delivered experience gives each visitor a separate persisted session with Infra, Support and Sales agents, two teams, separately committed five-second steps, an approval queue with exact payloads/impact, pause/resume/terminal kill, drift containment, usage by agent/task, last-N operational replay and CSV/JSON audit exports.
 
-Live demo: https://agent-control-tower.tadafuqai.chatgpt.site
+The implementation matches Sites version 4, source 18afd4d8779a4fd4af40a524d08494b8e87a4151. Its 46 public frontend files match GitHub implementation commit 8f9760d7720845ea084674d13154654077857a54. The final documentation/test-only delivery commit preserves that application code.
 
-Repository: https://github.com/AnasAli09822/agent-control-tower/tree/sites-migration
+See [final evidence](evidence/2026-11-01-final.json) for the current public acceptance, fresh local tests, verified deployment, source comparison, CI and the explicit limits of browser observations. Earlier evidence remains dated; historical results are not presented as newly executed tests.
 
-Main project `weathered-poetry-97205616`, branch `br-gentle-butterfly-b57bd2r5`, database `controltower`. Migration 006 was applied at 2026-09-30T20:44:16.039Z after explicit approval. Control service `actctlsites`; event service `actevtsites`. Existing Vercel functions are retained, but Sites is the verified hosting path.
+No new production migration is needed. Applied migration 006 remains the authoritative epoch fence. Historical killed agents and append-only records are preserved; New session creates separate identities.
 
-The canonical public agents reflect their historical demo state. Infra and Sales were already killed before the latest browser test, and approvals were already resolved. Browser observations verify the live UI, filters, stream, replay and exports; fresh full-cycle behavior is proven separately by the private Neon fixture. No killed agent was silently reset.
+Simulation advances while a signed operator SSE connection is open. Business systems, reasoning summaries and usage are simulated and labelled. The control effects, database transactions, event sequence and audit records are real persisted application behavior. Public demo sessions provide isolation, not enterprise tenant authentication.
 
-Detailed results: `docs/evidence/2026-10-01-acceptance.json`. Earlier checkpoint documents are historical, superseded by this status.
+Live: https://agent-control-tower.tadafuqai.chatgpt.site
+
+Public repository: https://github.com/AnasAli09822/agent-control-tower
+
+[Submission notes](SUBMISSION_NOTES.md) · [Requirements](REQUIREMENTS.md) · [Architecture](ARCHITECTURE.md) · [Failure test](FAILURE_TEST.md) · [Two-year thesis](TWO_YEAR_THESIS.md)

@@ -1,0 +1,1193 @@
+{
+  "verificationRevision": "approval-lock-chain-v2",
+  "startedAt": "2026-10-06T23:02:27.339Z",
+  "workspace": "ws_acceptance_b97b930909",
+  "database": "controltower",
+  "checks": [
+    {
+      "name": "main_migration_006_installed",
+      "passed": true,
+      "evidence": [
+        {
+          "version": "006_authoritative_epoch_fence"
+        }
+      ]
+    },
+    {
+      "name": "fresh_fixture_zero_baseline",
+      "passed": true,
+      "evidence": {
+        "runs": 0,
+        "credits": 0
+      }
+    },
+    {
+      "name": "normal_three_fresh_runs",
+      "passed": true,
+      "evidence": {
+        "runs": [
+          "run_02bb9db40165420e16bd0b93_1",
+          "run_2dffc37547354f8e8829c92f_1",
+          "run_e567fded92a2cf048977f153_1"
+        ],
+        "approvals": [
+          "approval_540f8d702ec856cc915720dc_4",
+          "approval_6ca52454572f2ec284f3f823_4"
+        ],
+        "idempotent": false
+      }
+    },
+    {
+      "name": "risk_gate_no_350_effect_before_approval",
+      "passed": true,
+      "evidence": [
+        {
+          "ticket_id": "ticket125_b97b930909",
+          "amount_usd": "125.00"
+        }
+      ]
+    },
+    {
+      "name": "normal_sales_scoring_effect",
+      "passed": true,
+      "evidence": {
+        "stage": "qualified",
+        "score": 82
+      }
+    },
+    {
+      "name": "normal_idempotent_no_duplicate_runs",
+      "passed": true,
+      "evidence": {
+        "runs": [
+          "run_02bb9db40165420e16bd0b93_1",
+          "run_2dffc37547354f8e8829c92f_1",
+          "run_e567fded92a2cf048977f153_1"
+        ],
+        "approvals": [],
+        "idempotent": true
+      }
+    },
+    {
+      "name": "approval_wrong_team_denied",
+      "passed": true,
+      "evidence": {
+        "status": 404,
+        "body": {
+          "error": "not_found:approval"
+        }
+      }
+    },
+    {
+      "name": "approval_exact_payload_substitution_denied",
+      "passed": true,
+      "evidence": {
+        "code": "23503",
+        "message": "insert or update on table \"tool_actions\" violates foreign key constraint \"tool_approval_exact_fk\""
+      }
+    },
+    {
+      "name": "approval_exact_action_substitution_denied",
+      "passed": true,
+      "evidence": {
+        "code": "23503",
+        "message": "insert or update on table \"tool_actions\" violates foreign key constraint \"tool_approval_exact_fk\""
+      }
+    },
+    {
+      "name": "approval_exact_risk_substitution_denied",
+      "passed": true,
+      "evidence": {
+        "code": "23503",
+        "message": "insert or update on table \"tool_actions\" violates foreign key constraint \"tool_approval_exact_fk\""
+      }
+    },
+    {
+      "name": "approval_approve_http_200",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "body": {
+          "approval": {
+            "id": "approval_540f8d702ec856cc915720dc_4",
+            "workspace_id": "ws_acceptance_b97b930909",
+            "team_id": "team_ops_b97b930909",
+            "agent_id": "support_b97b930909",
+            "run_id": "run_2dffc37547354f8e8829c92f_1",
+            "task_id": "task_support_b97b930909",
+            "action_type": "billing.issue_credit",
+            "action_payload": {
+              "ticket_id": "ticket350_b97b930909",
+              "amount_usd": 350
+            },
+            "action_payload_hash": "8fbe57fa884ea64fc1521033073510fd0414558fd6cd84eae0c09b8f85415824",
+            "reason": "Policy requires operator approval",
+            "evidence_json": [
+              {
+                "source": "support_tickets",
+                "ticket_id": "ticket350_b97b930909",
+                "requested_credit_usd": 350
+              },
+              {
+                "source": "policy_support_credit",
+                "approval_above_usd": 200
+              }
+            ],
+            "risk_level": "high",
+            "risk_score": "76.00",
+            "estimated_impact_json": {
+              "credit_usd": 350
+            },
+            "status": "approved",
+            "requested_at": "2026-10-06T23:02:27.529Z",
+            "decided_by_operator_id": "operator_b97b930909",
+            "decided_at": "2026-10-06T23:02:28.076Z",
+            "decision_note": null,
+            "version": "1",
+            "idempotency_key": "run_2dffc37547354f8e8829c92f_1:approval:4"
+          },
+          "resolution": {
+            "toolActionId": "tool_540f8d702ec856cc915720dc_4",
+            "decision": "approve"
+          }
+        }
+      }
+    },
+    {
+      "name": "approval_exact_350_effect_once",
+      "passed": true,
+      "evidence": [
+        {
+          "ticket_id": "ticket350_b97b930909",
+          "amount_usd": "350.00"
+        }
+      ]
+    },
+    {
+      "name": "approval_duplicate_conflict",
+      "passed": true,
+      "evidence": {
+        "status": 409,
+        "body": {
+          "error": "conflict:approval_approved"
+        }
+      }
+    },
+    {
+      "name": "approval_reject_no_discount_effect",
+      "passed": true,
+      "evidence": {
+        "rejected": {
+          "status": 200,
+          "body": {
+            "approval": {
+              "id": "approval_6ca52454572f2ec284f3f823_4",
+              "workspace_id": "ws_acceptance_b97b930909",
+              "team_id": "team_rev_b97b930909",
+              "agent_id": "sales_b97b930909",
+              "run_id": "run_e567fded92a2cf048977f153_1",
+              "task_id": "task_sales_b97b930909",
+              "action_type": "crm.propose_discount",
+              "action_payload": {
+                "lead_id": "discount_b97b930909",
+                "discount_pct": 15
+              },
+              "action_payload_hash": "26e859d3cedb69700d56ac62c5afe3bb20601cdc5afd5c4d861b37aaea884e67",
+              "reason": "Policy requires operator approval",
+              "evidence_json": [
+                {
+                  "source": "crm_leads",
+                  "lead_id": "discount_b97b930909",
+                  "requested_discount_pct": 18
+                },
+                {
+                  "source": "policy_sales_discount",
+                  "threshold_pct": 10
+                }
+              ],
+              "risk_level": "high",
+              "risk_score": "72.00",
+              "estimated_impact_json": {
+                "discount_pct": 15,
+                "annual_value_usd": 54000
+              },
+              "status": "rejected",
+              "requested_at": "2026-10-06T23:02:27.529Z",
+              "decided_by_operator_id": "operator_b97b930909",
+              "decided_at": "2026-10-06T23:02:28.167Z",
+              "decision_note": null,
+              "version": "1",
+              "idempotency_key": "run_e567fded92a2cf048977f153_1:approval:4"
+            },
+            "resolution": {
+              "toolActionId": "tool_6ca52454572f2ec284f3f823_4",
+              "decision": "reject"
+            }
+          }
+        },
+        "lead": {
+          "stage": "new",
+          "requested_discount_pct": "18.00"
+        }
+      }
+    },
+    {
+      "name": "team_scoped_fleet",
+      "passed": true,
+      "evidence": [
+        "infra_b97b930909",
+        "support_b97b930909"
+      ]
+    },
+    {
+      "name": "persisted_replay_structured",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "steps": 5
+      }
+    },
+    {
+      "name": "persisted_usage_simulated_nonzero",
+      "passed": true,
+      "evidence": {
+        "total_tokens": "8360",
+        "input_tokens": "6480",
+        "output_tokens": "1880",
+        "cached_tokens": "0",
+        "total_cost_usd": "0.02800000",
+        "by_task": [
+          {
+            "task_id": "task_infra_b97b930909",
+            "task_title": "Acceptance task",
+            "task_status": "completed",
+            "agent_id": "infra_b97b930909",
+            "agent_name": "infra_b97b930909",
+            "team_id": "team_ops_b97b930909",
+            "input_tokens": "1240",
+            "output_tokens": "360",
+            "cached_tokens": "0",
+            "cost_usd": "0.00536000"
+          },
+          {
+            "task_id": "task_sales_b97b930909",
+            "task_title": "Acceptance task",
+            "task_status": "completed",
+            "agent_id": "sales_b97b930909",
+            "agent_name": "sales_b97b930909",
+            "team_id": "team_rev_b97b930909",
+            "input_tokens": "2620",
+            "output_tokens": "760",
+            "cached_tokens": "0",
+            "cost_usd": "0.01132000"
+          },
+          {
+            "task_id": "task_support_b97b930909",
+            "task_title": "Acceptance task",
+            "task_status": "completed",
+            "agent_id": "support_b97b930909",
+            "agent_name": "support_b97b930909",
+            "team_id": "team_ops_b97b930909",
+            "input_tokens": "2620",
+            "output_tokens": "760",
+            "cached_tokens": "0",
+            "cost_usd": "0.01132000"
+          }
+        ],
+        "source": "simulated"
+      }
+    },
+    {
+      "name": "rogue_real_auto_pause_and_two_blocks",
+      "passed": true,
+      "evidence": {
+        "rogue": {
+          "taskId": "rogue_task_04d4366c7356746c19ce7ab8",
+          "runId": "rogue_run_04d4366c7356746c19ce7ab8",
+          "driftScore": 92,
+          "autoPaused": true,
+          "controlEpoch": "0",
+          "idempotent": false
+        },
+        "blocked": [
+          {
+            "tool_name": "infra.change_rate_limit",
+            "status": "cancelled"
+          },
+          {
+            "tool_name": "infra.rollback_release",
+            "status": "cancelled"
+          }
+        ],
+        "infrastructure": [
+          {
+            "rate_limit_rps": 1200
+          }
+        ]
+      }
+    },
+    {
+      "name": "intervention_resume_pause_kill",
+      "passed": true,
+      "evidence": {
+        "resume": 200,
+        "pause": 200,
+        "kill": {
+          "status": 200,
+          "body": {
+            "agent": {
+              "id": "infra_b97b930909",
+              "workspace_id": "ws_acceptance_b97b930909",
+              "team_id": "team_ops_b97b930909",
+              "name": "infra_b97b930909",
+              "agent_type": "infra_ops",
+              "current_status": "killed",
+              "drift_score": "92.00",
+              "control_epoch": "1",
+              "version": "7",
+              "last_heartbeat_at": "2026-10-06T23:02:27.529Z",
+              "created_at": "2026-10-06T23:02:27.421Z",
+              "updated_at": "2026-10-06T23:02:28.446Z"
+            },
+            "intervention": {
+              "id": "33",
+              "workspace_id": "ws_acceptance_b97b930909",
+              "team_id": "team_ops_b97b930909",
+              "operator_id": "operator_b97b930909",
+              "agent_id": "infra_b97b930909",
+              "run_id": "rogue_run_04d4366c7356746c19ce7ab8",
+              "task_id": "rogue_task_04d4366c7356746c19ce7ab8",
+              "command": "kill",
+              "reason": "kill from operator console",
+              "expected_version": null,
+              "resulting_control_epoch": "1",
+              "idempotency_key": "agentsinfrabbkill_b97b930909:53ba33d2f83c",
+              "created_at": "2026-10-06T23:02:28.446Z"
+            },
+            "staleWorkerGuard": {
+              "blocked": true,
+              "reason": "tool execution blocked by agent state: killed",
+              "evidenceToolActionId": "stale_5a01f9e6e7e4a318fc649d25_1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "killed_agent_terminal",
+      "passed": true,
+      "evidence": {
+        "status": 409,
+        "body": {
+          "error": "conflict:agent_killed"
+        }
+      }
+    },
+    {
+      "name": "genuine_overlap_kill_waits_for_worker_commit",
+      "passed": true,
+      "evidence": {
+        "workerPid": 1096,
+        "observedBlockedConnections": [
+          {
+            "pid": 1085,
+            "blockers": [
+              1096
+            ],
+            "wait_event_type": "Lock"
+          }
+        ],
+        "workerResult": "tool_0b0057869c3a103c1c260a39_1",
+        "killStatus": 200
+      }
+    },
+    {
+      "name": "post_kill_old_worker_blocked",
+      "passed": true,
+      "evidence": {
+        "code": "55000",
+        "message": "tool execution blocked by agent state: killed"
+      }
+    },
+    {
+      "name": "post_kill_zero_late_effect",
+      "passed": true,
+      "evidence": {
+        "lateEffect": false
+      }
+    },
+    {
+      "name": "concurrent_effect_committed_once_no_late_action",
+      "passed": true,
+      "evidence": {
+        "effects": 1,
+        "actions": 1
+      }
+    },
+    {
+      "name": "genuine_approval_kill_overlap_no_deadlock",
+      "passed": true,
+      "evidence": {
+        "blockerPid": 4947,
+        "killWait": [
+          {
+            "pid": 4612,
+            "blockers": [
+              4947
+            ]
+          }
+        ],
+        "bothWait": [
+          {
+            "pid": 1085,
+            "blockers": [
+              4612
+            ]
+          },
+          {
+            "pid": 4612,
+            "blockers": [
+              4947
+            ]
+          }
+        ],
+        "responses": [
+          {
+            "status": 200,
+            "body": {
+              "agent": {
+                "id": "sales_b97b930909",
+                "workspace_id": "ws_acceptance_b97b930909",
+                "team_id": "team_rev_b97b930909",
+                "name": "sales_b97b930909",
+                "agent_type": "sales_ops",
+                "current_status": "killed",
+                "drift_score": "0.00",
+                "control_epoch": "1",
+                "version": "7",
+                "last_heartbeat_at": "2026-10-06T23:02:28.633Z",
+                "created_at": "2026-10-06T23:02:27.421Z",
+                "updated_at": "2026-10-06T23:02:28.953Z"
+              },
+              "intervention": {
+                "id": "35",
+                "workspace_id": "ws_acceptance_b97b930909",
+                "team_id": "team_rev_b97b930909",
+                "operator_id": "operator_b97b930909",
+                "agent_id": "sales_b97b930909",
+                "run_id": "run_2d1cfa54b26e7c4203cb9c38_1",
+                "task_id": "task_race_b97b930909",
+                "command": "kill",
+                "reason": "kill from operator console",
+                "expected_version": null,
+                "resulting_control_epoch": "1",
+                "idempotency_key": "agentssalesbbkill_b97b930909:6f8156942d1c",
+                "created_at": "2026-10-06T23:02:28.953Z"
+              },
+              "idempotent": false
+            }
+          },
+          {
+            "status": 409,
+            "body": {
+              "error": "conflict:approval_cancelled"
+            }
+          }
+        ],
+        "lead": {
+          "stage": "new",
+          "requested_discount_pct": "18.00"
+        }
+      }
+    },
+    {
+      "name": "kill_wins_approval_zero_discount_effect",
+      "passed": true,
+      "evidence": {
+        "stage": "new",
+        "requested_discount_pct": "18.00"
+      }
+    },
+    {
+      "name": "authoritative_epoch_rejects_old_running_run",
+      "passed": true,
+      "evidence": {
+        "code": "55000",
+        "message": "tool execution blocked by authoritative control epoch: worker 0, agent 1"
+      }
+    },
+    {
+      "name": "persisted_event_order_unique",
+      "passed": true,
+      "evidence": {
+        "count": 77,
+        "first": {
+          "sequence": "1",
+          "event_type": "task.started"
+        },
+        "last": {
+          "sequence": "77",
+          "event_type": "agent.kill"
+        }
+      }
+    },
+    {
+      "name": "audit_contains_operator_and_denial",
+      "passed": true,
+      "evidence": {
+        "status": 200
+      }
+    }
+  ],
+  "concurrency": {
+    "workerPid": 1096,
+    "observedBlockedConnections": [
+      {
+        "pid": 1085,
+        "blockers": [
+          1096
+        ],
+        "wait_event_type": "Lock"
+      }
+    ],
+    "workerResult": "tool_0b0057869c3a103c1c260a39_1",
+    "killStatus": 200
+  },
+  "approvalKillConcurrency": {
+    "blockerPid": 4947,
+    "killWait": [
+      {
+        "pid": 4612,
+        "blockers": [
+          4947
+        ]
+      }
+    ],
+    "bothWait": [
+      {
+        "pid": 1085,
+        "blockers": [
+          4612
+        ]
+      },
+      {
+        "pid": 4612,
+        "blockers": [
+          4947
+        ]
+      }
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "body": {
+          "agent": {
+            "id": "sales_b97b930909",
+            "workspace_id": "ws_acceptance_b97b930909",
+            "team_id": "team_rev_b97b930909",
+            "name": "sales_b97b930909",
+            "agent_type": "sales_ops",
+            "current_status": "killed",
+            "drift_score": "0.00",
+            "control_epoch": "1",
+            "version": "7",
+            "last_heartbeat_at": "2026-10-06T23:02:28.633Z",
+            "created_at": "2026-10-06T23:02:27.421Z",
+            "updated_at": "2026-10-06T23:02:28.953Z"
+          },
+          "intervention": {
+            "id": "35",
+            "workspace_id": "ws_acceptance_b97b930909",
+            "team_id": "team_rev_b97b930909",
+            "operator_id": "operator_b97b930909",
+            "agent_id": "sales_b97b930909",
+            "run_id": "run_2d1cfa54b26e7c4203cb9c38_1",
+            "task_id": "task_race_b97b930909",
+            "command": "kill",
+            "reason": "kill from operator console",
+            "expected_version": null,
+            "resulting_control_epoch": "1",
+            "idempotency_key": "agentssalesbbkill_b97b930909:6f8156942d1c",
+            "created_at": "2026-10-06T23:02:28.953Z"
+          },
+          "idempotent": false
+        }
+      },
+      {
+        "status": 409,
+        "body": {
+          "error": "conflict:approval_cancelled"
+        }
+      }
+    ],
+    "lead": {
+      "stage": "new",
+      "requested_discount_pct": "18.00"
+    }
+  },
+  "passed": true,
+  "completedAt": "2026-10-06T23:02:29.061Z",
+  "stepped": {
+    "revision": "stepped-session-v1",
+    "startedAt": "2026-10-06T23:02:29.061Z",
+    "checks": [
+      {
+        "name": "fresh_session_three_tasks_zero_usage",
+        "passed": true,
+        "evidence": {
+          "total_tokens": "0",
+          "input_tokens": "0",
+          "output_tokens": "0",
+          "cached_tokens": "0",
+          "total_cost_usd": "0",
+          "by_task": [
+            {
+              "task_id": "task_infra_seed_a677d1234e78bf0f72334149e0f6b795",
+              "task_title": "Investigate API error spike",
+              "task_status": "queued",
+              "agent_id": "agent_infra_a677d1234e78bf0f72334149e0f6b795",
+              "agent_name": "Infrastructure Ops",
+              "team_id": "team_operations_a677d1234e78bf0f72334149e0f6b795",
+              "input_tokens": "0",
+              "output_tokens": "0",
+              "cached_tokens": "0",
+              "cost_usd": "0"
+            },
+            {
+              "task_id": "task_sales_seed_a677d1234e78bf0f72334149e0f6b795",
+              "task_title": "Qualify new accounts",
+              "task_status": "queued",
+              "agent_id": "agent_sales_a677d1234e78bf0f72334149e0f6b795",
+              "agent_name": "Sales Ops",
+              "team_id": "team_revenue_a677d1234e78bf0f72334149e0f6b795",
+              "input_tokens": "0",
+              "output_tokens": "0",
+              "cached_tokens": "0",
+              "cost_usd": "0"
+            },
+            {
+              "task_id": "task_support_seed_a677d1234e78bf0f72334149e0f6b795",
+              "task_title": "Clear urgent support queue",
+              "task_status": "queued",
+              "agent_id": "agent_support_a677d1234e78bf0f72334149e0f6b795",
+              "agent_name": "Support Ops",
+              "team_id": "team_operations_a677d1234e78bf0f72334149e0f6b795",
+              "input_tokens": "0",
+              "output_tokens": "0",
+              "cached_tokens": "0",
+              "cost_usd": "0"
+            }
+          ],
+          "source": "simulated"
+        }
+      },
+      {
+        "name": "start_three_unique_running_runs_no_steps_yet",
+        "passed": true,
+        "evidence": {
+          "runs": [
+            "run_a53bb309d2c9e7462a7c033c_1",
+            "run_02541da29185fadbdfcec55f_1",
+            "run_379ac70a893098bfb7168109_1"
+          ],
+          "idempotent": false,
+          "step_interval_seconds": 5
+        }
+      },
+      {
+        "name": "timing_gate_prevents_immediate_execution",
+        "passed": true
+      },
+      {
+        "name": "first_tick_commits_one_step_per_agent",
+        "passed": true,
+        "evidence": [
+          {
+            "agentId": "agent_infra_a677d1234e78bf0f72334149e0f6b795",
+            "runId": "run_a53bb309d2c9e7462a7c033c_1",
+            "step": 1
+          },
+          {
+            "agentId": "agent_sales_a677d1234e78bf0f72334149e0f6b795",
+            "runId": "run_379ac70a893098bfb7168109_1",
+            "step": 1
+          },
+          {
+            "agentId": "agent_support_a677d1234e78bf0f72334149e0f6b795",
+            "runId": "run_02541da29185fadbdfcec55f_1",
+            "step": 1
+          }
+        ]
+      },
+      {
+        "name": "pause_in_flight_prevents_next_sales_step",
+        "passed": true,
+        "evidence": {
+          "status": 200,
+          "body": {
+            "agent": {
+              "id": "agent_sales_a677d1234e78bf0f72334149e0f6b795",
+              "workspace_id": "ws_demo_a677d1234e78bf0f72334149e0f6b795",
+              "team_id": "team_revenue_a677d1234e78bf0f72334149e0f6b795",
+              "name": "Sales Ops",
+              "agent_type": "sales_ops",
+              "current_status": "paused",
+              "drift_score": "0.00",
+              "control_epoch": "0",
+              "version": "2",
+              "last_heartbeat_at": "2026-10-06T23:02:29.304Z",
+              "created_at": "2026-10-06T23:02:29.063Z",
+              "updated_at": "2026-10-06T23:02:29.351Z"
+            },
+            "intervention": {
+              "id": "36",
+              "workspace_id": "ws_demo_a677d1234e78bf0f72334149e0f6b795",
+              "team_id": "team_revenue_a677d1234e78bf0f72334149e0f6b795",
+              "operator_id": "operator_demo_a677d1234e78bf0f72334149e0f6b795",
+              "agent_id": "agent_sales_a677d1234e78bf0f72334149e0f6b795",
+              "run_id": "run_379ac70a893098bfb7168109_1",
+              "task_id": "task_sales_seed_a677d1234e78bf0f72334149e0f6b795",
+              "command": "pause",
+              "reason": "pause from operator console",
+              "expected_version": null,
+              "resulting_control_epoch": "0",
+              "idempotency_key": "a396479c-72a6-422c-be37-15edd4ad6ba2",
+              "created_at": "2026-10-06T23:02:29.351Z"
+            },
+            "idempotent": false
+          }
+        }
+      },
+      {
+        "name": "resume_continues_same_run",
+        "passed": true,
+        "evidence": {
+          "status": 200,
+          "body": {
+            "agent": {
+              "id": "agent_sales_a677d1234e78bf0f72334149e0f6b795",
+              "workspace_id": "ws_demo_a677d1234e78bf0f72334149e0f6b795",
+              "team_id": "team_revenue_a677d1234e78bf0f72334149e0f6b795",
+              "name": "Sales Ops",
+              "agent_type": "sales_ops",
+              "current_status": "running",
+              "drift_score": "0.00",
+              "control_epoch": "0",
+              "version": "3",
+              "last_heartbeat_at": "2026-10-06T23:02:29.304Z",
+              "created_at": "2026-10-06T23:02:29.063Z",
+              "updated_at": "2026-10-06T23:02:29.477Z"
+            },
+            "intervention": {
+              "id": "37",
+              "workspace_id": "ws_demo_a677d1234e78bf0f72334149e0f6b795",
+              "team_id": "team_revenue_a677d1234e78bf0f72334149e0f6b795",
+              "operator_id": "operator_demo_a677d1234e78bf0f72334149e0f6b795",
+              "agent_id": "agent_sales_a677d1234e78bf0f72334149e0f6b795",
+              "run_id": "run_379ac70a893098bfb7168109_1",
+              "task_id": "task_sales_seed_a677d1234e78bf0f72334149e0f6b795",
+              "command": "resume",
+              "reason": "resume from operator console",
+              "expected_version": null,
+              "resulting_control_epoch": "0",
+              "idempotency_key": "a93d3b71-efe0-4200-8c4a-f48dc5d91e75",
+              "created_at": "2026-10-06T23:02:29.477Z"
+            },
+            "idempotent": false
+          }
+        }
+      },
+      {
+        "name": "normal_tasks_reach_two_exact_approval_gates",
+        "passed": true,
+        "evidence": [
+          {
+            "id": "approval_d372ad086c1b7592e0204045_4",
+            "action": "crm.propose_discount",
+            "payload": {
+              "lead_id": "lead_meridian_a677d1234e78bf0f72334149e0f6b795",
+              "discount_pct": 15
+            }
+          },
+          {
+            "id": "approval_464f0c433f6029344d516edc_4",
+            "action": "billing.issue_credit",
+            "payload": {
+              "ticket_id": "ticket_103_a677d1234e78bf0f72334149e0f6b795",
+              "amount_usd": 350
+            }
+          }
+        ]
+      },
+      {
+        "name": "no_350_credit_before_approval",
+        "passed": true,
+        "evidence": [
+          {
+            "amount_usd": "125.00"
+          }
+        ]
+      },
+      {
+        "name": "paused_approval_returns_409_without_effect",
+        "passed": true,
+        "evidence": {
+          "status": 409,
+          "body": {
+            "error": "conflict:agent_paused_resume_before_decision"
+          }
+        }
+      },
+      {
+        "name": "resume_restores_waiting_approval",
+        "passed": true,
+        "evidence": {
+          "status": 200,
+          "body": {
+            "agent": {
+              "id": "agent_support_a677d1234e78bf0f72334149e0f6b795",
+              "workspace_id": "ws_demo_a677d1234e78bf0f72334149e0f6b795",
+              "team_id": "team_operations_a677d1234e78bf0f72334149e0f6b795",
+              "name": "Support Ops",
+              "agent_type": "support_ops",
+              "current_status": "waiting_approval",
+              "drift_score": "0.00",
+              "control_epoch": "0",
+              "version": "4",
+              "last_heartbeat_at": "2026-10-06T23:02:29.675Z",
+              "created_at": "2026-10-06T23:02:29.063Z",
+              "updated_at": "2026-10-06T23:02:29.773Z"
+            },
+            "intervention": {
+              "id": "39",
+              "workspace_id": "ws_demo_a677d1234e78bf0f72334149e0f6b795",
+              "team_id": "team_operations_a677d1234e78bf0f72334149e0f6b795",
+              "operator_id": "operator_demo_a677d1234e78bf0f72334149e0f6b795",
+              "agent_id": "agent_support_a677d1234e78bf0f72334149e0f6b795",
+              "run_id": "run_02541da29185fadbdfcec55f_1",
+              "task_id": "task_support_seed_a677d1234e78bf0f72334149e0f6b795",
+              "command": "resume",
+              "reason": "resume from operator console",
+              "expected_version": null,
+              "resulting_control_epoch": "0",
+              "idempotency_key": "6aff54e5-1876-4de1-869d-a56864b605ab",
+              "created_at": "2026-10-06T23:02:29.773Z"
+            },
+            "idempotent": false
+          }
+        }
+      },
+      {
+        "name": "approved_350_credit_applied_exactly_once",
+        "passed": true,
+        "evidence": [
+          {
+            "amount_usd": "125.00"
+          },
+          {
+            "amount_usd": "350.00"
+          }
+        ]
+      },
+      {
+        "name": "duplicate_approval_conflicts",
+        "passed": true
+      },
+      {
+        "name": "reject_keeps_discount_unchanged",
+        "passed": true,
+        "evidence": {
+          "stage": "new",
+          "requested_discount_pct": "18.00"
+        }
+      },
+      {
+        "name": "task_usage_reconciles_tokens_and_cost",
+        "passed": true,
+        "evidence": {
+          "total_tokens": "8360",
+          "input_tokens": "6480",
+          "output_tokens": "1880",
+          "cached_tokens": "0",
+          "total_cost_usd": "0.02800000",
+          "by_task": [
+            {
+              "task_id": "task_infra_seed_a677d1234e78bf0f72334149e0f6b795",
+              "task_title": "Investigate API error spike",
+              "task_status": "completed",
+              "agent_id": "agent_infra_a677d1234e78bf0f72334149e0f6b795",
+              "agent_name": "Infrastructure Ops",
+              "team_id": "team_operations_a677d1234e78bf0f72334149e0f6b795",
+              "input_tokens": "1240",
+              "output_tokens": "360",
+              "cached_tokens": "0",
+              "cost_usd": "0.00536000"
+            },
+            {
+              "task_id": "task_sales_seed_a677d1234e78bf0f72334149e0f6b795",
+              "task_title": "Qualify new accounts",
+              "task_status": "completed",
+              "agent_id": "agent_sales_a677d1234e78bf0f72334149e0f6b795",
+              "agent_name": "Sales Ops",
+              "team_id": "team_revenue_a677d1234e78bf0f72334149e0f6b795",
+              "input_tokens": "2620",
+              "output_tokens": "760",
+              "cached_tokens": "0",
+              "cost_usd": "0.01132000"
+            },
+            {
+              "task_id": "task_support_seed_a677d1234e78bf0f72334149e0f6b795",
+              "task_title": "Clear urgent support queue",
+              "task_status": "completed",
+              "agent_id": "agent_support_a677d1234e78bf0f72334149e0f6b795",
+              "agent_name": "Support Ops",
+              "team_id": "team_operations_a677d1234e78bf0f72334149e0f6b795",
+              "input_tokens": "2620",
+              "output_tokens": "760",
+              "cached_tokens": "0",
+              "cost_usd": "0.01132000"
+            }
+          ],
+          "source": "simulated"
+        }
+      },
+      {
+        "name": "other_workspace_cannot_decide_this_approval",
+        "passed": true
+      },
+      {
+        "name": "rogue_starts_before_drift_not_as_finished_snapshot",
+        "passed": true,
+        "evidence": {
+          "taskId": "rogue_task_511985b2c4066029a808088f",
+          "runId": "rogue_run_511985b2c4066029a808088f",
+          "driftScore": 0,
+          "autoPaused": false,
+          "controlEpoch": "0",
+          "idempotent": false
+        }
+      },
+      {
+        "name": "rogue_warning_is_observable_before_containment",
+        "passed": true,
+        "evidence": {
+          "current_status": "running",
+          "drift_score": "70.00"
+        }
+      },
+      {
+        "name": "rogue_auto_pauses_at_92_without_production_effect",
+        "passed": true,
+        "evidence": {
+          "contained": {
+            "current_status": "paused",
+            "drift_score": "92.00"
+          },
+          "infra": {
+            "rate_limit_rps": 1200
+          }
+        }
+      },
+      {
+        "name": "replay_last_n_steps_with_evidence",
+        "passed": true,
+        "evidence": {
+          "steps": [
+            {
+              "id": "169",
+              "agent_id": "agent_infra_a677d1234e78bf0f72334149e0f6b795",
+              "run_id": "rogue_run_511985b2c4066029a808088f",
+              "task_id": "rogue_task_511985b2c4066029a808088f",
+              "step_no": 2,
+              "goal": "Reduce incident impact",
+              "observation": "The worker proposes a production change using stale evidence.",
+              "evidence_json": [
+                {
+                  "source": "retry_counter",
+                  "retries": 3
+                },
+                {
+                  "stale": true,
+                  "source": "infra_metrics"
+                }
+              ],
+              "decision_summary": "Block the unsupported rate-limit change.",
+              "policy_result": "block",
+              "intended_action": "infra.change_rate_limit",
+              "action_result": "blocked_by_risk_gate",
+              "confidence": "0.6100",
+              "input_tokens": "920",
+              "output_tokens": "260",
+              "cached_tokens": "0",
+              "cost_usd": "0.00392000",
+              "duration_ms": "240",
+              "created_at": "2026-10-06T23:02:30.063Z"
+            },
+            {
+              "id": "170",
+              "agent_id": "agent_infra_a677d1234e78bf0f72334149e0f6b795",
+              "run_id": "rogue_run_511985b2c4066029a808088f",
+              "task_id": "rogue_task_511985b2c4066029a808088f",
+              "step_no": 3,
+              "goal": "Reduce incident impact",
+              "observation": "The worker repeats an unsafe proposal without fresh evidence.",
+              "evidence_json": [
+                {
+                  "source": "retry_counter",
+                  "retries": 4
+                },
+                {
+                  "stale": true,
+                  "source": "infra_metrics"
+                }
+              ],
+              "decision_summary": "Block rollback and contain critical drift.",
+              "policy_result": "block",
+              "intended_action": "infra.rollback_release",
+              "action_result": "blocked_by_risk_gate",
+              "confidence": "0.6100",
+              "input_tokens": "920",
+              "output_tokens": "260",
+              "cached_tokens": "0",
+              "cost_usd": "0.00392000",
+              "duration_ms": "240",
+              "created_at": "2026-10-06T23:02:30.109Z"
+            }
+          ]
+        }
+      },
+      {
+        "name": "agent_replay_includes_previous_task_and_current_rogue",
+        "passed": true
+      },
+      {
+        "name": "kill_invalidates_epoch_and_denies_stale_probe",
+        "passed": true,
+        "evidence": {
+          "status": 200,
+          "body": {
+            "agent": {
+              "id": "agent_infra_a677d1234e78bf0f72334149e0f6b795",
+              "workspace_id": "ws_demo_a677d1234e78bf0f72334149e0f6b795",
+              "team_id": "team_operations_a677d1234e78bf0f72334149e0f6b795",
+              "name": "Infrastructure Ops",
+              "agent_type": "infra_ops",
+              "current_status": "killed",
+              "drift_score": "92.00",
+              "control_epoch": "1",
+              "version": "5",
+              "last_heartbeat_at": "2026-10-06T23:02:30.157Z",
+              "created_at": "2026-10-06T23:02:29.063Z",
+              "updated_at": "2026-10-06T23:02:30.172Z"
+            },
+            "intervention": {
+              "id": "40",
+              "workspace_id": "ws_demo_a677d1234e78bf0f72334149e0f6b795",
+              "team_id": "team_operations_a677d1234e78bf0f72334149e0f6b795",
+              "operator_id": "operator_demo_a677d1234e78bf0f72334149e0f6b795",
+              "agent_id": "agent_infra_a677d1234e78bf0f72334149e0f6b795",
+              "run_id": "rogue_run_511985b2c4066029a808088f",
+              "task_id": "rogue_task_511985b2c4066029a808088f",
+              "command": "kill",
+              "reason": "kill from operator console",
+              "expected_version": null,
+              "resulting_control_epoch": "1",
+              "idempotency_key": "fbe80a9d-1864-449f-a627-8c5512e5297e",
+              "created_at": "2026-10-06T23:02:30.172Z"
+            },
+            "staleWorkerGuard": {
+              "blocked": true,
+              "reason": "tool execution blocked by agent state: killed",
+              "evidenceToolActionId": "stale_e23b9dba59ae692d67c06d73_1"
+            }
+          }
+        }
+      },
+      {
+        "name": "killed_agent_never_advances_again",
+        "passed": true
+      },
+      {
+        "name": "post_kill_callback_is_not_executed",
+        "passed": true,
+        "evidence": {
+          "code": "55000",
+          "message": "tool execution blocked by agent state: killed"
+        }
+      },
+      {
+        "name": "new_session_after_kill_has_three_fresh_runs",
+        "passed": true,
+        "evidence": {
+          "runs": [
+            "run_5b8ef92f3760c1c5e5ba50d9_1",
+            "run_d395189f0056ff75e3b3ff0a_1",
+            "run_7944279d7206cd1bf998f50c_1"
+          ],
+          "idempotent": false,
+          "step_interval_seconds": 5
+        }
+      },
+      {
+        "name": "concurrent_viewers_do_not_duplicate_steps",
+        "passed": true,
+        "evidence": {
+          "overlap": [
+            [
+              {
+                "agentId": "agent_infra_ae95711fb32dfba53a6e63e2dc9e9b94",
+                "runId": "run_5b8ef92f3760c1c5e5ba50d9_1",
+                "step": 1
+              },
+              {
+                "agentId": "agent_support_ae95711fb32dfba53a6e63e2dc9e9b94",
+                "runId": "run_d395189f0056ff75e3b3ff0a_1",
+                "step": 1
+              }
+            ],
+            [
+              {
+                "agentId": "agent_sales_ae95711fb32dfba53a6e63e2dc9e9b94",
+                "runId": "run_7944279d7206cd1bf998f50c_1",
+                "step": 1
+              }
+            ]
+          ],
+          "steps": [
+            {
+              "run_id": "run_5b8ef92f3760c1c5e5ba50d9_1",
+              "n": 1
+            },
+            {
+              "run_id": "run_7944279d7206cd1bf998f50c_1",
+              "n": 1
+            },
+            {
+              "run_id": "run_d395189f0056ff75e3b3ff0a_1",
+              "n": 1
+            }
+          ]
+        }
+      },
+      {
+        "name": "persisted_stream_sequence_is_contiguous",
+        "passed": true,
+        "evidence": {
+          "count": 63
+        }
+      },
+      {
+        "name": "audit_contains_approve_reject_pause_and_kill",
+        "passed": true
+      },
+      {
+        "name": "invalid_replay_limit_is_handled",
+        "passed": true
+      }
+    ],
+    "workspace": "ws_demo_a677d1234e78bf0f72334149e0f6b795",
+    "rogueRun": "rogue_run_511985b2c4066029a808088f",
+    "passed": true,
+    "completedAt": "2026-10-06T23:02:30.456Z"
+  }
+}
